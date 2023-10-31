@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=61.0", "setuptools_scm>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wbi"
+version = "0.0.1"
+authors = [
+  { name="Vineet Bansal", email="vineetb@princeton.edu" },
+  { name="Anushka Acharya", email="aa9078@princeton.edu" },
+]
+description = "Whole Brain Imaging"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: POSIX :: Linux",
+]
+dependencies = []
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.package-data]
+wbi = ["data/*"]
+
+[tool.setuptools_scm]
+write_to = "src/wbi/_version.py"
+
+[tool.pytest.ini_options]
+testpaths = [
+    "tests"
+]
+
+[project.optional-dependencies]
+dev = [
+    "build",
+    "myst-parser",
+    "pre-commit",
+    "pyright==1.1.333",
+    "pytest>=6",
+    "sphinx",
+    "twine"
+]
