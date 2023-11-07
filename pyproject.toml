@@ -15,7 +15,10 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: POSIX :: Linux",
 ]
-dependencies = []
+dependencies = [
+    "numpy",
+    "scipy"
+]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
