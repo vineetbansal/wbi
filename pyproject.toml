@@ -17,6 +17,9 @@ classifiers = [
 ]
 dependencies = []
 
+[project.scripts]
+wbi = "wbi.__main__:main"
+
 [tool.setuptools]
 package-dir = {"" = "src"}
 
