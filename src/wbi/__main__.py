@@ -1,5 +1,6 @@
 from wbi.commands import hello
 from wbi.commands import goodbye
+from wbi.commands import remote
 
 
 def main():
@@ -11,7 +12,7 @@ def main():
 
     parser.add_argument("--version", action="version", version="wbi " + wbi.__version__)
 
-    modules = (hello, goodbye)
+    modules = (hello, goodbye, remote)
 
     subparsers = parser.add_subparsers(title="Choose a command")
     subparsers.required = True

@@ -15,7 +15,10 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: POSIX :: Linux",
 ]
-dependencies = []
+dependencies = [
+    "jinja2",
+    "paramiko"
+]
 
 [project.scripts]
 wbi = "wbi.__main__:main"
