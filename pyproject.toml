@@ -17,8 +17,13 @@ classifiers = [
 ]
 dependencies = [
     "numpy",
-    "scipy"
+    "scipy",
+    "jinja2",
+    "paramiko"
 ]
+
+[project.scripts]
+wbi = "wbi.__main__:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
@@ -33,6 +38,9 @@ write_to = "src/wbi/_version.py"
 testpaths = [
     "tests"
 ]
+
+[tool.pyright]
+exclude = ["src/wbi/legacy", "matlab/"]
 
 [project.optional-dependencies]
 dev = [
