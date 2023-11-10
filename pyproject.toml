@@ -16,6 +16,8 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
 ]
 dependencies = [
+    "numpy",
+    "scipy",
     "jinja2",
     "paramiko"
 ]

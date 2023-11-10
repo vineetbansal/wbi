@@ -7,20 +7,25 @@ repos:
     rev: v3.2.0
     hooks:
     -   id: trailing-whitespace
+        exclude: 'src/wbi/legacy/|tests/test_data/.*'
     -   id: end-of-file-fixer
+        exclude: 'src/wbi/legacy/|tests/test_data/.*'
 
 -   repo: https://github.com/pycqa/flake8
     rev: '4.0.1'
     hooks:
     -   id: flake8
+        exclude: 'src/wbi/legacy/|tests/test_data/.*'
 
 -   repo: https://github.com/psf/black
     rev: 22.10.0
     hooks:
       - id: black
         language_version: python3
+        exclude: 'src/wbi/legacy/|tests/test_data/.*'
 
 -   repo: https://github.com/MarcoGorelli/absolufy-imports
     rev: v0.3.1
     hooks:
     -   id: absolufy-imports
+        exclude: 'src/wbi/legacy/|tests/test_data/.*'
