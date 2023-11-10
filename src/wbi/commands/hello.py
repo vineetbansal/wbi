@@ -1,5 +1,6 @@
 import argparse
 import logging
+from wbi import config
 
 
 logger = logging.getLogger(__name__)
@@ -7,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 def add_args(parser):
     parser.add_argument(
-        "--greeting", type=str, default="Hello", help="Greeting to print"
+        "--greeting", type=str, default=config.test.string, help="Greeting to print"
     )
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="Increase verbosity"

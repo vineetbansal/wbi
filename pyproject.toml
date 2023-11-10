@@ -17,7 +17,8 @@ classifiers = [
 ]
 dependencies = [
     "jinja2",
-    "paramiko"
+    "paramiko",
+    "pyyaml"
 ]
 
 [project.scripts]
