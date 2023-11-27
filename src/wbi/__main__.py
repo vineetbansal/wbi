@@ -1,7 +1,7 @@
 from wbi.commands import hello
 from wbi.commands import goodbye
 from wbi.commands import remote
-
+from wbi.commands import flash_finder
 
 def main():
     import argparse
@@ -12,7 +12,7 @@ def main():
 
     parser.add_argument("--version", action="version", version="wbi " + wbi.__version__)
 
-    modules = (hello, goodbye, remote)
+    modules = (hello, goodbye, remote, flash_finder)
 
     subparsers = parser.add_subparsers(title="Choose a command")
     subparsers.required = True
