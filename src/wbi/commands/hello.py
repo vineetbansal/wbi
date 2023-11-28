@@ -23,7 +23,6 @@ def add_args(parser):
 
 
 def main(args):
-
     if not isinstance(args, argparse.Namespace):
         args = add_args(argparse.ArgumentParser()).parse_args(args)
 
