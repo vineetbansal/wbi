@@ -45,5 +45,6 @@ dev = [
     "pyright==1.1.333",
     "pytest>=6",
     "sphinx",
-    "twine"
+    "twine",
+    "cowsay"
 ]

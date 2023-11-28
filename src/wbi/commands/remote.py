@@ -29,13 +29,14 @@ def add_args(parser):
 
 
 def main(args):
-
     hostname, username = args.hostname, args.username
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     client.connect(hostname, username=username)
 
-    job_id, remote_temp_stdout_path = submit(template="hello", mins=1, client=client)
+    job_id, remote_temp_stdout_path = submit(
+        template=args.template, mins=1, client=client
+    )
     logger.info(f"Submitted job with ID {job_id}")
     logger.info(f"Remote stdout path: {remote_temp_stdout_path}")
 

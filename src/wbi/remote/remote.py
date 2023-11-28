@@ -14,7 +14,6 @@ def submit(
     hostname=None,
     **kwargs,
 ):
-
     if client is None:
         assert (
             hostname is not None and username is not None
