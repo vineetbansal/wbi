@@ -6,4 +6,4 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=16M
 
-python -c "import socket; print('Hello ' + socket.gethostname());"
+echo "Hello $(hostname)"
