@@ -30,7 +30,7 @@ wbi = "wbi.__main__:main"
 package-dir = {"" = "src"}
 
 [tool.setuptools.package-data]
-wbi = ["data/*"]
+wbi = ["config.yaml", "data/*"]
 
 [tool.setuptools_scm]
 write_to = "src/wbi/_version.py"
