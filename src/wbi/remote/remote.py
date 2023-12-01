@@ -5,7 +5,7 @@ import tempfile
 
 
 def submit(
-    template,
+    template_name,
     mins,
     remote_temp_dir="/scratch/gpfs/{username}/tmp",
     chdir=None,
@@ -31,8 +31,10 @@ def submit(
         autoescape=select_autoescape(),
     )
 
-    template = env.get_template(f"{template}.jinja")
-    jobfile = template.render(mins=mins, chdir=chdir, **kwargs)
+    template = env.get_template(f"{template_name}.jinja")
+    jobfile = template.render(
+        mins=mins, chdir=chdir, template_name=template_name, **kwargs
+    )
 
     temp_file = tempfile.NamedTemporaryFile(delete=False)
     temp_file.write(jobfile.encode("utf8"))
