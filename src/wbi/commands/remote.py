@@ -29,6 +29,7 @@ def add_args(parser):
 
 
 def main(args):
+
     hostname, username = args.hostname, args.username
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
