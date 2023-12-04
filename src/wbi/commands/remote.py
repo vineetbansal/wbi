@@ -24,7 +24,7 @@ def add_args(parser):
         "--node",
         type=str,
         default="compute",
-        help="Specify if you want to execute command in compute node or the head node."
+        help="Specify if you want to execute command in compute node or the head node.",
     )
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="Increase verbosity"
@@ -46,7 +46,11 @@ def monitor_job(client, remote_temp_stdout_path=None):
         if "Hello" in stdout:
             break
         elif stdout == "":
-            logger.info("Job has not started yet. Waiting 5 seconds." if remote_temp_stdout_path else "Waiting...")
+            logger.info(
+                "Job has not started yet. Waiting 5 seconds."
+                if remote_temp_stdout_path
+                else "Waiting..."
+            )
             time.sleep(5)
         else:
             logger.error(f"Unexpected output: {stdout}")
@@ -61,7 +65,9 @@ def main(args):
     client = setup_ssh_client(args.hostname, args.username)
 
     if args.node == "compute":
-        job_id, remote_temp_stdout_path = submit(template="hello", mins=1, client=client)
+        job_id, remote_temp_stdout_path = submit(
+            template="hello", mins=1, client=client
+        )
         logger.info(f"Submitted job with ID {job_id}")
         logger.info(f"Remote stdout path: {remote_temp_stdout_path}")
         monitor_job(client, remote_temp_stdout_path)

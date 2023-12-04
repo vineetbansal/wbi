@@ -7,7 +7,7 @@ import tempfile
 def connect(client=None, username=None, hostname=None):
     if client is None:
         assert (
-                hostname is not None and username is not None
+            hostname is not None and username is not None
         ), "Specify hostname and username"
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -20,14 +20,14 @@ def connect(client=None, username=None, hostname=None):
 
 
 def submit(
-        template,
-        mins,
-        remote_temp_dir="/scratch/gpfs/{username}/tmp",
-        chdir=None,
-        client=None,
-        username=None,
-        hostname=None,
-        **kwargs,
+    template,
+    mins,
+    remote_temp_dir="/scratch/gpfs/{username}/tmp",
+    chdir=None,
+    client=None,
+    username=None,
+    hostname=None,
+    **kwargs,
 ):
     client, username, hostname = connect(client, username, hostname)
 
