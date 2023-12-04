@@ -66,7 +66,7 @@ def main(args):
 
     if args.node == "compute":
         job_id, remote_temp_stdout_path = submit(
-            template="hello", mins=1, client=client
+            template=args.template, mins=1, client=client
         )
         logger.info(f"Submitted job with ID {job_id}")
         logger.info(f"Remote stdout path: {remote_temp_stdout_path}")
