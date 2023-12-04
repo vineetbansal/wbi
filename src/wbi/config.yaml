@@ -1,0 +1,15 @@
+ # General package configuration can go here
+
+ # A key purely for testing purposes
+ test:
+   string: "Hello"
+   int: 42
+   float: 3.141592653589793
+   none: null
+   nested:
+     bool: true
+     list:
+       - "Blinky"
+       - "Pinky"
+       - "Inky"
+       - "Clyde"
