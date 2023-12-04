@@ -4,20 +4,10 @@ import paramiko
 import tempfile
 
 
-def submit(
-    template,
-    mins,
-    remote_temp_dir="/scratch/gpfs/{username}/tmp",
-    chdir=None,
-    client=None,
-    username=None,
-    hostname=None,
-    **kwargs,
-):
-
+def connect(client=None, username=None, hostname=None):
     if client is None:
         assert (
-            hostname is not None and username is not None
+                hostname is not None and username is not None
         ), "Specify hostname and username"
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -25,6 +15,21 @@ def submit(
     else:
         hostname = client.get_transport().getpeername()[0]
         username = client.get_transport().get_username()
+
+    return client, username, hostname
+
+
+def submit(
+        template,
+        mins,
+        remote_temp_dir="/scratch/gpfs/{username}/tmp",
+        chdir=None,
+        client=None,
+        username=None,
+        hostname=None,
+        **kwargs,
+):
+    client, username, hostname = connect(client, username, hostname)
 
     env = Environment(
         loader=PackageLoader("wbi.remote.templates", package_path=""),
@@ -62,9 +67,12 @@ def submit(
     return job_id, remote_temp_stdout_path
 
 
-def parse_remote_stdout(client, remote_temp_stdout_path):
+def parse_remote_stdout(client, remote_temp_stdout_path=None):
     try:
-        cmd = f"cat {remote_temp_stdout_path}"
+        if remote_temp_stdout_path:
+            cmd = f"cat {remote_temp_stdout_path}"
+        else:
+            cmd = 'bash -c "echo Hello from Head Node: $(hostname)"'
         stdin, stdout, stderr = client.exec_command(cmd)
         return stdout.read().decode()
     except FileNotFoundError:

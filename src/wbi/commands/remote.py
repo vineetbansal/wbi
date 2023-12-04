@@ -2,8 +2,7 @@ import argparse
 import logging
 import paramiko
 import time
-from wbi.remote.remote import submit, parse_remote_stdout
-
+from wbi.remote.remote import connect, submit, parse_remote_stdout
 
 logger = logging.getLogger(__name__)
 
@@ -22,35 +21,54 @@ def add_args(parser):
         help="Template to use for job script (default: hello)",
     )
     parser.add_argument(
+        "--node",
+        type=str,
+        default="compute",
+        help="Specify if you want to execute command in compute node or the head node."
+    )
+    parser.add_argument(
         "-v", "--verbose", action="store_true", help="Increase verbosity"
     )
 
     return parser
 
 
-def main(args):
-
-    hostname, username = args.hostname, args.username
+def setup_ssh_client(hostname, username):
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     client.connect(hostname, username=username)
+    return client
 
-    job_id, remote_temp_stdout_path = submit(template="hello", mins=1, client=client)
-    logger.info(f"Submitted job with ID {job_id}")
-    logger.info(f"Remote stdout path: {remote_temp_stdout_path}")
 
+def monitor_job(client, remote_temp_stdout_path=None):
     while True:
-        stdout = parse_remote_stdout(client, remote_temp_stdout_path)
+        stdout = get_remote_stdout(client, remote_temp_stdout_path)
         if "Hello" in stdout:
             break
         elif stdout == "":
-            logger.info("Job has not started yet. Waiting 5 seconds.")
+            logger.info("Job has not started yet. Waiting 5 seconds." if remote_temp_stdout_path else "Waiting...")
             time.sleep(5)
         else:
             logger.error(f"Unexpected output: {stdout}")
-
-    stdout = parse_remote_stdout(client, remote_temp_stdout_path)
     logger.info(stdout)
+
+
+def get_remote_stdout(client, remote_temp_stdout_path=None):
+    return parse_remote_stdout(client, remote_temp_stdout_path)
+
+
+def main(args):
+    client = setup_ssh_client(args.hostname, args.username)
+
+    if args.node == "compute":
+        job_id, remote_temp_stdout_path = submit(template="hello", mins=1, client=client)
+        logger.info(f"Submitted job with ID {job_id}")
+        logger.info(f"Remote stdout path: {remote_temp_stdout_path}")
+        monitor_job(client, remote_temp_stdout_path)
+    elif args.node == "head":
+        connect(client=client)
+        monitor_job(client)
+
     client.close()
 
 
