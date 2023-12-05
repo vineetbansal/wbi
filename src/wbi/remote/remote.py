@@ -80,4 +80,4 @@ def parse_remote_stdout(client, remote_temp_stdout_path):
         stdin, stdout, stderr = client.exec_command(cmd)
         return stdout.read().decode()
     except FileNotFoundError:
-        return None
+        return ""
