@@ -22,9 +22,9 @@ def add_args(parser):
     )
     parser.add_argument(
         "--cluster",
-        type=bool,
         default=False,
-        help="Specify if you want to execute command in compute node or the head node.",
+        action="store_true",
+        help="Specify if you want to execute command using sbatch",
     )
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="Increase verbosity"
@@ -42,38 +42,23 @@ def setup_ssh_client(hostname, username):
 
 def monitor_job(client, remote_temp_stdout_path):
     while True:
-        stdout = get_remote_stdout(client, remote_temp_stdout_path)
-        if stdout is None:
+        stdout = parse_remote_stdout(client, remote_temp_stdout_path)
+        if stdout in (None, ""):
             logger.info("No job output available yet. Waiting...")
             time.sleep(5)
-        elif stdout.strip() == "":
-            logger.info(
-                "Job has started but produced no output yet. Waiting 5 seconds."
-            )
-            time.sleep(5)
-        elif " " in stdout:
-            break
         else:
-            logger.error(f"Unexpected output: {stdout}")
+            break
     logger.info(stdout)
-
-
-def get_remote_stdout(client, remote_temp_stdout_path):
-    return parse_remote_stdout(client, remote_temp_stdout_path)
 
 
 def main(args):
     client = setup_ssh_client(args.hostname, args.username)
 
+    job_id, remote_temp_stdout_path = submit(
+        template_name=args.template, mins=1, client=client, cluster=args.cluster
+    )
     if args.cluster:
-        job_id, remote_temp_stdout_path = submit(
-            template_name=args.template, mins=1, client=client, cluster=True
-        )
         logger.info(f"Submitted job with ID {job_id}")
-    else:
-        remote_temp_stdout_path = submit(
-            template_name=args.template, mins=1, client=client
-        )
     logger.info(f"Remote stdout path: {remote_temp_stdout_path}")
     monitor_job(client, remote_temp_stdout_path)
 

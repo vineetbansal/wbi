@@ -66,15 +66,15 @@ def submit(
         cmd = f"sbatch {sbatch_flags} {remote_temp_script_path}"
         stdin, stdout, stderr = client.exec_command(cmd)
         job_id = int(stdout.read().decode())
-
-        return job_id, remote_temp_stdout_path
     else:
         chmod_command = f"chmod +x {remote_temp_script_path}"
         client.exec_command(chmod_command)
 
         cmd = f"bash {remote_temp_script_path} >> {remote_temp_stdout_path}"
         client.exec_command(cmd)
-        return remote_temp_stdout_path
+        job_id = None  # no job id for local execution
+
+    return job_id, remote_temp_stdout_path
 
 
 def parse_remote_stdout(client, remote_temp_stdout_path):
