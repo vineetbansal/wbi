@@ -4,17 +4,7 @@ import paramiko
 import tempfile
 
 
-def submit(
-    template_name,
-    mins,
-    remote_temp_dir="/scratch/gpfs/{username}/tmp",
-    chdir=None,
-    client=None,
-    username=None,
-    hostname=None,
-    **kwargs,
-):
-
+def connect(client=None, username=None, hostname=None):
     if client is None:
         assert (
             hostname is not None and username is not None
@@ -25,6 +15,22 @@ def submit(
     else:
         hostname = client.get_transport().getpeername()[0]
         username = client.get_transport().get_username()
+
+    return client, username, hostname
+
+
+def submit(
+    template_name,
+    mins,
+    remote_temp_dir="/scratch/gpfs/{username}/tmp",
+    chdir=None,
+    client=None,
+    username=None,
+    hostname=None,
+    cluster=False,
+    **kwargs,
+):
+    client, username, hostname = connect(client, username, hostname)
 
     env = Environment(
         loader=PackageLoader("wbi.remote.templates", package_path=""),
@@ -48,18 +54,25 @@ def submit(
     with client.open_sftp() as sftp:
         sftp.put(temp_file.name, remote_temp_script_path)
 
-    sbatch_flags = " ".join(
-        [
-            "--parsable",
-            f"--time 00:{mins}:00",
-            f"--chdir {chdir}" if chdir is not None else "",
-            f"--out={remote_temp_stdout_path}",
-        ]
-    )
-    cmd = f"sbatch {sbatch_flags} {remote_temp_script_path}"
+    if cluster:
+        sbatch_flags = " ".join(
+            [
+                "--parsable",
+                f"--time 00:{mins}:00",
+                f"--chdir {chdir}" if chdir is not None else "",
+                f"--out={remote_temp_stdout_path}",
+            ]
+        )
+        cmd = f"sbatch {sbatch_flags} {remote_temp_script_path}"
+        stdin, stdout, stderr = client.exec_command(cmd)
+        job_id = int(stdout.read().decode())
+    else:
+        chmod_command = f"chmod +x {remote_temp_script_path}"
+        client.exec_command(chmod_command)
 
-    stdin, stdout, stderr = client.exec_command(cmd)
-    job_id = int(stdout.read().decode())
+        cmd = f"bash -c {remote_temp_script_path} >> {remote_temp_stdout_path}"
+        client.exec_command(cmd)
+        job_id = None  # no job id for local execution
 
     return job_id, remote_temp_stdout_path
 
@@ -70,4 +83,4 @@ def parse_remote_stdout(client, remote_temp_stdout_path):
         stdin, stdout, stderr = client.exec_command(cmd)
         return stdout.read().decode()
     except FileNotFoundError:
-        return ""
+        return None
