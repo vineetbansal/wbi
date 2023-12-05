@@ -2,7 +2,7 @@ import argparse
 import logging
 import paramiko
 import time
-from wbi.remote.remote import connect, submit, parse_remote_stdout
+from wbi.remote.remote import submit, parse_remote_stdout
 
 logger = logging.getLogger(__name__)
 
@@ -21,9 +21,9 @@ def add_args(parser):
         help="Template to use for job script (default: hello)",
     )
     parser.add_argument(
-        "--node",
-        type=str,
-        default="compute",
+        "--cluster",
+        type=bool,
+        default=False,
         help="Specify if you want to execute command in compute node or the head node.",
     )
     parser.add_argument(
@@ -40,7 +40,7 @@ def setup_ssh_client(hostname, username):
     return client
 
 
-def monitor_job(client, remote_temp_stdout_path=None):
+def monitor_job(client, remote_temp_stdout_path):
     while True:
         stdout = get_remote_stdout(client, remote_temp_stdout_path)
         if "Hello" in stdout:
@@ -57,23 +57,24 @@ def monitor_job(client, remote_temp_stdout_path=None):
     logger.info(stdout)
 
 
-def get_remote_stdout(client, remote_temp_stdout_path=None):
+def get_remote_stdout(client, remote_temp_stdout_path):
     return parse_remote_stdout(client, remote_temp_stdout_path)
 
 
 def main(args):
     client = setup_ssh_client(args.hostname, args.username)
 
-    if args.node == "compute":
+    if args.cluster:
         job_id, remote_temp_stdout_path = submit(
-            template_name=args.template, mins=1, client=client
+            template_name=args.template, mins=1, client=client, cluster=True
         )
         logger.info(f"Submitted job with ID {job_id}")
-        logger.info(f"Remote stdout path: {remote_temp_stdout_path}")
-        monitor_job(client, remote_temp_stdout_path)
-    elif args.node == "head":
-        connect(client=client)
-        monitor_job(client)
+    else:
+        remote_temp_stdout_path = submit(
+            template_name=args.template, mins=1, client=client
+        )
+    logger.info(f"Remote stdout path: {remote_temp_stdout_path}")
+    monitor_job(client, remote_temp_stdout_path)
 
     client.close()
 

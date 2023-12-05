@@ -27,6 +27,7 @@ def submit(
     client=None,
     username=None,
     hostname=None,
+    cluster=False,
     **kwargs,
 ):
     client, username, hostname = connect(client, username, hostname)
@@ -53,28 +54,29 @@ def submit(
     with client.open_sftp() as sftp:
         sftp.put(temp_file.name, remote_temp_script_path)
 
-    sbatch_flags = " ".join(
-        [
-            "--parsable",
-            f"--time 00:{mins}:00",
-            f"--chdir {chdir}" if chdir is not None else "",
-            f"--out={remote_temp_stdout_path}",
-        ]
-    )
-    cmd = f"sbatch {sbatch_flags} {remote_temp_script_path}"
+    if cluster:
+        sbatch_flags = " ".join(
+            [
+                "--parsable",
+                f"--time 00:{mins}:00",
+                f"--chdir {chdir}" if chdir is not None else "",
+                f"--out={remote_temp_stdout_path}",
+            ]
+        )
+        cmd = f"sbatch {sbatch_flags} {remote_temp_script_path}"
+        stdin, stdout, stderr = client.exec_command(cmd)
+        job_id = int(stdout.read().decode())
 
-    stdin, stdout, stderr = client.exec_command(cmd)
-    job_id = int(stdout.read().decode())
+        return job_id, remote_temp_stdout_path
+    else:
+        cmd = f"bash {remote_temp_script_path} >> {remote_temp_stdout_path}"
+        client.exec_command(cmd)
+        return remote_temp_stdout_path
 
-    return job_id, remote_temp_stdout_path
 
-
-def parse_remote_stdout(client, remote_temp_stdout_path=None):
+def parse_remote_stdout(client, remote_temp_stdout_path):
     try:
-        if remote_temp_stdout_path:
-            cmd = f"cat {remote_temp_stdout_path}"
-        else:
-            cmd = 'bash -c "echo Hello from Head Node: $(hostname)"'
+        cmd = f"cat {remote_temp_stdout_path}"
         stdin, stdout, stderr = client.exec_command(cmd)
         return stdout.read().decode()
     except FileNotFoundError:
