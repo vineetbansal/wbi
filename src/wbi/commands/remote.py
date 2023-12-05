@@ -24,7 +24,7 @@ def add_args(parser):
         "--cluster",
         type=bool,
         default=False,
-        help="Specify if you want to execute command in compute node or the head node.",
+        help="Specify if you want to execute command in compute node (default: head node).",
     )
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="Increase verbosity"
@@ -43,17 +43,14 @@ def setup_ssh_client(hostname, username):
 def monitor_job(client, remote_temp_stdout_path):
     while True:
         stdout = get_remote_stdout(client, remote_temp_stdout_path)
-        if "Hello" in stdout:
-            break
+        if stdout is None:
+            logger.info("No job output available yet. Waiting...")
+            time.sleep(5)
         elif stdout == "":
-            logger.info(
-                "Job has not started yet. Waiting 5 seconds."
-                if remote_temp_stdout_path
-                else "Waiting..."
-            )
+            logger.info("Job has not started yet. Waiting 5 seconds.")
             time.sleep(5)
         else:
-            logger.error(f"Unexpected output: {stdout}")
+            break
     logger.info(stdout)
 
 
