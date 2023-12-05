@@ -70,7 +70,7 @@ def submit(
         chmod_command = f"chmod +x {remote_temp_script_path}"
         client.exec_command(chmod_command)
 
-        cmd = f"bash {remote_temp_script_path} >> {remote_temp_stdout_path}"
+        cmd = f"bash -c {remote_temp_script_path} >> {remote_temp_stdout_path}"
         client.exec_command(cmd)
         job_id = None  # no job id for local execution
 
