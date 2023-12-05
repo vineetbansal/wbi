@@ -43,15 +43,16 @@ def setup_ssh_client(hostname, username):
 def monitor_job(client, remote_temp_stdout_path):
     while True:
         stdout = get_remote_stdout(client, remote_temp_stdout_path)
-        if "Hello" in stdout:
-            break
-        elif stdout == "":
+        if stdout is None:
+            logger.info("No job output available yet. Waiting...")
+            time.sleep(5)
+        elif stdout.strip() == "":
             logger.info(
-                "Job has not started yet. Waiting 5 seconds."
-                if remote_temp_stdout_path
-                else "Waiting..."
+                "Job has started but produced no output yet. Waiting 5 seconds."
             )
             time.sleep(5)
+        elif " " in stdout:
+            break
         else:
             logger.error(f"Unexpected output: {stdout}")
     logger.info(stdout)
