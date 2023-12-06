@@ -1,5 +1,8 @@
+from importlib.resources import files
 import os
 import logging.config
+import wbi
+from wbi.configuration import Config
 
 # The _version.py file is managed by setuptools-scm
 #   and is not in version control.
@@ -31,3 +34,5 @@ logging.config.dictConfig(
         "loggers": {"": {"handlers": ["default"], "level": "INFO"}},
     }
 )
+
+config = Config("wbi", files(wbi) / "config.yaml")
