@@ -3,6 +3,7 @@ from wbi.commands import goodbye
 from wbi.commands import remote
 from wbi.commands import flash_finder
 
+
 def main():
     import argparse
     import os
