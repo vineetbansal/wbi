@@ -40,11 +40,14 @@ def flash_finder(input_folder, output_folder, chunksize=4000):
             frames.astype(np.float64), axis=1)
         # f.seek(chunkMaxSize*1024*512*2*i) #not needed, np.fromfile moves the pointer
 
-    # Last partial chunk
-    chunk = np.fromfile(f, dtype=np.uint16, count=remainingframes * 1024 * 512)
-    frames = chunk.reshape((remainingframes, 1024 * 512))
-    brightness[-remainingframes - 1:-1] = np.average(frames, axis=1)
-    stdev[-remainingframes - 1:-1] = np.std(frames.astype(np.float64), axis=1)
+
+    # In cases where the number of frames in .dat file aren't exact multiple of 6 * chunk_size
+    if remainingframes > 0:
+        # Last partial chunk
+        chunk = np.fromfile(f, dtype=np.uint16, count=remainingframes * 1024 * 512)
+        frames = chunk.reshape((remainingframes, 1024 * 512))
+        brightness[-remainingframes:] = np.average(frames, axis=1)
+        stdev[-remainingframes:] = np.std(frames.astype(np.float64), axis=1)
 
     # Close file containing frames
     f.close()
