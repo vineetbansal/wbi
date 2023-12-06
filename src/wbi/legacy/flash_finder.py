@@ -46,13 +46,8 @@ def flash_finder(input_folder, output_folder, chunksize=4000):
         # Last partial chunk
         chunk = np.fromfile(f, dtype=np.uint16, count=remainingframes * 1024 * 512)
         frames = chunk.reshape((remainingframes, 1024 * 512))
-        try:
-            brightness[-remainingframes - 1:-1] = np.average(frames, axis=1)
-            stdev[-remainingframes - 1:-1] = np.std(frames.astype(np.float64), axis=1)
-        except ValueError:
-            brightness = np.average(frames, axis=1)
-            stdev = np.std(frames.astype(np.float64), axis=1)
-
+        brightness[-remainingframes:] = np.average(frames, axis=1)
+        stdev[-remainingframes:] = np.std(frames.astype(np.float64), axis=1)
 
     # Close file containing frames
     f.close()
