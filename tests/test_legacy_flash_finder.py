@@ -19,3 +19,19 @@ def test_flash_finder():
         assert os.path.exists(os.path.join(temp_dir, "hiResData.mat"))
         assert os.path.exists(os.path.join(temp_dir, "CameraFrameData.txt"))
         assert os.path.exists(os.path.join(temp_dir, "submissionParameters.txt"))
+
+
+# Previously threw a value error, but is fixed now
+def test_flash_bug1():
+    # no. of frames in .dat file (90) >= 6*chunksize causes an error
+    with tempfile.TemporaryDirectory() as temp_dir:
+        _ = flash_finder(
+            input_folder=data_folder, output_folder=temp_dir, chunksize=1000
+        )
+
+
+# Previously threw a divide by zero error, but is fixed now
+def test_flash_bug2():
+    # no. of frames in .dat file (90) being an exact multiple of 6*chunksize causes an error
+    with tempfile.TemporaryDirectory() as temp_dir:
+        _ = flash_finder(input_folder=data_folder, output_folder=temp_dir, chunksize=15)
