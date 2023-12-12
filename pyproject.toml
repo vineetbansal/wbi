@@ -20,7 +20,10 @@ dependencies = [
     "scipy",
     "jinja2",
     "paramiko",
-    "pyyaml"
+    "pyyaml",
+    "pandas",
+    "tensorflow",
+    "tqdm"
 ]
 
 [project.scripts]
