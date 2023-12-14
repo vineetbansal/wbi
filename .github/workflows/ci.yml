@@ -18,6 +18,13 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Install Dependencies
+        run: |
+          sudo add-apt-repository universe
+          sudo apt-get update -q
+          sudo apt-get upgrade -q
+          sudo apt install -qq libtiff-dev
+
       - name: Upgrade setuptools
         run: |
           pip3 install wheel --upgrade
