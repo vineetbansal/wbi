@@ -19,6 +19,7 @@ dependencies = [
     "numpy",
     "scipy",
     "jinja2",
+    "matplotlib",
     "opencv-python",
     "paramiko",
     "pyyaml",
