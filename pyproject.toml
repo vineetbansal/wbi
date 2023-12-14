@@ -19,6 +19,7 @@ dependencies = [
     "numpy",
     "scipy",
     "jinja2",
+    "opencv-python",
     "paramiko",
     "pyyaml",
     "pandas",
