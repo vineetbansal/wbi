@@ -34,7 +34,7 @@ def main(args):
         logger.setLevel(logging.DEBUG)
 
     make_centerline(
-        data_path=args.input_folder,
+        input_folder=args.input_folder,
         model_path=args.model.path,
         max_frames=args.max_frames,
         plot=args.plot,

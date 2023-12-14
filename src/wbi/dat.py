@@ -26,9 +26,9 @@ class Dat:
 
     def _load_other_attributes(self):
         dat_filename = os.path.basename(self.dat_file)
-        dtype, rows, cols = re.match(
-            r"sCMOS_Frames_(\w+)_(\d+)x(\d+).dat", dat_filename
-        ).groups()
+        match = re.match(r"sCMOS_Frames_(\w+)_(\d+)x(\d+).dat", dat_filename)
+        assert match is not None
+        dtype, rows, cols = match.groups()
 
         assert dtype == "U16", "Unexpected dtype in dat file"
         self.dtype = {"U16": np.uint16}[dtype]

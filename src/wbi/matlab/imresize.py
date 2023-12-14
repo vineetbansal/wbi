@@ -106,6 +106,9 @@ def imresizevec(inimg, weights, indices, dim):
         outimg = np.sum(
             weights * ((inimg[:, indices].squeeze(axis=2)).astype(np.float64)), axis=2
         )
+    else:
+        raise RuntimeError
+
     if inimg.dtype == np.uint8:
         outimg = np.clip(outimg, 0, 255)
         return np.around(outimg).astype(np.uint8)

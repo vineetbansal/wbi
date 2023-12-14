@@ -33,6 +33,8 @@ class Experiment:
 
     def median_image_himag(self, chunk):
         start, end = self.timing.get_start_end_row_indices(chunk)
+        assert isinstance(start, int)
+        assert isinstance(end, int)
         img = self.dat.load(count=end - start, offset=start)
         img = np.median(img, axis=-1)
         return img
@@ -48,7 +50,7 @@ class Experiment:
 
         for frame_number in range(number_of_frames):
             _, frame = cap.read()
-            mean_frame = np.mean(frame, axis=2)
+            mean_frame = np.mean(frame, axis=2)  # type: ignore
             yield mean_frame
 
     def generate_median_images(self, output_folder=None, tif=True):
@@ -101,7 +103,7 @@ class Experiment:
             for frame_number in range(number_of_frames):
                 _, frame = cap.read()
                 frame = frame[:, :, 0]
-                mean_frame = np.mean(frame)
+                mean_frame = np.mean(frame)  # type: ignore
                 mat[0, frame_number] = mean_frame
 
             basename = os.path.splitext(os.path.basename(avi_file))[0]
