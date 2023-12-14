@@ -46,7 +46,7 @@ testpaths = [
 ]
 
 [tool.pyright]
-exclude = ["src/wbi/legacy", "matlab/"]
+exclude = ["src/wbi/legacy", "matlab/", "build/"]
 
 [project.optional-dependencies]
 dev = [

@@ -46,7 +46,7 @@ class Timing:
 
     def get_start_end_row_indices(self, chunk):
         chunk_timing = self.timing[self.timing["chunk"] == chunk]
-        return chunk_timing.index.min(), chunk_timing.index.max()
+        return int(chunk_timing.index.min()), int(chunk_timing.index.max())
 
 
 class LowMagTiming:

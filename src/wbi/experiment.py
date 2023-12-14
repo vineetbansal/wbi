@@ -33,8 +33,6 @@ class Experiment:
 
     def median_image_himag(self, chunk):
         start, end = self.timing.get_start_end_row_indices(chunk)
-        assert isinstance(start, int)
-        assert isinstance(end, int)
         img = self.dat.load(count=end - start, offset=start)
         img = np.median(img, axis=-1)
         return img
