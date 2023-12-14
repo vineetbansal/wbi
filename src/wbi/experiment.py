@@ -63,7 +63,7 @@ class Experiment:
                 plt.imsave(
                     os.path.join(output_folder_himag, f"dat_{i}.tif"),
                     arr=img,
-                    format="tif",
+                    format="tiff",
                 )
             else:
                 # A more natural way to visualize median images
