@@ -60,7 +60,11 @@ class Experiment:
 
         for i, img in enumerate(self.median_images_himag(), start=1):
             if tif:
-                plt.imsave(os.path.join(output_folder_himag, f"dat_{i}.tif"), arr=img)
+                plt.imsave(
+                    os.path.join(output_folder_himag, f"dat_{i}.tif"),
+                    arr=img,
+                    format="tif",
+                )
             else:
                 # A more natural way to visualize median images
                 red = img[: self.dat.rows, :]
