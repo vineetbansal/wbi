@@ -13,9 +13,6 @@ def add_args(parser):
         help="Path to folder containing data files",
     )
     parser.add_argument(
-        "--model-path", type=str, required=True, help="Path to best_model.h5"
-    )
-    parser.add_argument(
         "--max-frames", type=int, default=None, help="Max frames to process"
     )
     parser.add_argument("--plot", action="store_true", help="Plot centerlines")
@@ -35,7 +32,6 @@ def main(args):
 
     make_centerline(
         input_folder=args.input_folder,
-        model_path=args.model.path,
         max_frames=args.max_frames,
         plot=args.plot,
     )

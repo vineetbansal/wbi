@@ -36,10 +36,6 @@ jobs:
         run: |
           pre-commit run --all-files
 
-      - name: Download Test Data
-        run: |
-          python tests/test_data/download_data.py
-
       - name: Pytest
         run: |
           pytest

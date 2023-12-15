@@ -22,6 +22,7 @@ dependencies = [
     "matplotlib",
     "opencv-python",
     "paramiko",
+    "pooch",
     "pillow",
     "pyyaml",
     "pandas",
