@@ -4,9 +4,12 @@
 import os
 import numpy as np
 import scipy.io as sio
+from wbi.experiment import Experiment
 
 
-def flash_finder(input_folder, output_folder, chunksize=4000):
+def flash_finder(input_folder, output_folder=None, chunksize=4000):
+
+    output_folder = output_folder or input_folder
 
     # Limit memory usage. Load chunks of data
     # TODO: Why are we doing this?
@@ -32,6 +35,7 @@ def flash_finder(input_folder, output_folder, chunksize=4000):
 
     # Full iterations
     for i in np.arange(nIterations):
+        print(f"{i}/{nIterations}")
         chunk = np.fromfile(f, dtype=np.uint16, count=chunkMaxSize * 1024 * 512)
         frames = chunk.reshape((chunkMaxSize, 1024 * 512))
         brightness[i * chunkMaxSize:(i + 1) * chunkMaxSize] = np.average(frames,
@@ -199,20 +203,6 @@ def flash_finder(input_folder, output_folder, chunksize=4000):
     Mat['dataAll'] = dataAll
 
     sio.savemat(os.path.join(output_folder, "hiResData.mat"), Mat)
-
-    # Camera frame details -> just synchronous
-    CameraFrameData = np.array([
-        framesDetails[1],
-        np.arange(framesDetails[1].shape[0]),
-        5.0 * np.ones(framesDetails[1].shape[0]),
-        np.ones(framesDetails[1].shape[0])
-    ]).T
-
-    open(os.path.join(output_folder, "CameraFrameData.txt"), 'a').close()
-    os.chmod(os.path.join(output_folder, "CameraFrameData.txt"), 0o755)
-    np.savetxt(os.path.join(output_folder, "CameraFrameData.txt"), CameraFrameData,
-               header="Total Frames\tSaved Frames\tDC Offset\tImage StDev")
-
 
     stringa = "NFrames " + str(
         int(volumeIndex[-1]))  # needs to be int or tk doesn't like it

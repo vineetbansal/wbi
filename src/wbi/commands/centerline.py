@@ -1,6 +1,6 @@
 import argparse
 import logging
-from wbi.legacy.flash_finder import flash_finder
+from wbi.legacy.make_centerline import make_centerline
 
 logger = logging.getLogger(__name__)
 
@@ -13,14 +13,12 @@ def add_args(parser):
         help="Path to folder containing data files",
     )
     parser.add_argument(
-        "--output_folder",
-        type=str,
-        default=None,
-        help="Path to the folder to save output files",
+        "--model-path", type=str, required=True, help="Path to best_model.h5"
     )
     parser.add_argument(
-        "--chunksize", type=int, required=False, help="Approximate number of frames"
+        "--max-frames", type=int, default=None, help="Max frames to process"
     )
+    parser.add_argument("--plot", action="store_true", help="Plot centerlines")
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="Increase verbosity"
     )
@@ -35,17 +33,11 @@ def main(args):
     if args.verbose:
         logger.setLevel(logging.DEBUG)
 
-    logger.debug("Input folder needs to have sCMOS_Frames_U16_1024x512.dat")
-
-    input_folder, output_folder, chunksize = (
-        args.input_folder,
-        args.output_folder,
-        args.chunksize,
-    )
-    logger.info(f"Input: {input_folder} Output: {output_folder} ChunkSize: {chunksize}")
-
-    flash_finder(
-        input_folder=input_folder, output_folder=output_folder, chunksize=chunksize
+    make_centerline(
+        input_folder=args.input_folder,
+        model_path=args.model.path,
+        max_frames=args.max_frames,
+        plot=args.plot,
     )
 
 

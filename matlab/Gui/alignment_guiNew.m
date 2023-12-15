@@ -5,7 +5,7 @@ function varargout = alignment_guiNew(varargin)
 % files for the Leifer lab whole brain imaging set up. The setup produces 4
 % video feeds from 3 cameras to track and measure neural activity from
 % moving C. elegans. It is therefore necessary to spatially align all of
-% the video feeds. This is done by taking several images of differentfunction varargout = alignment_guiNew(varargin)
+% the video feeds. This is done by taking several images of different
 
 % fields of view of tetraspek beads. The bead images are taken with the
 % same whole brain imaging programs used to image the worm. This program

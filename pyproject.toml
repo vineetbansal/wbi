@@ -19,8 +19,14 @@ dependencies = [
     "numpy",
     "scipy",
     "jinja2",
+    "matplotlib",
+    "opencv-python",
     "paramiko",
-    "pyyaml"
+    "pillow",
+    "pyyaml",
+    "pandas",
+    "tensorflow",
+    "tqdm"
 ]
 
 [project.scripts]
@@ -41,7 +47,7 @@ testpaths = [
 ]
 
 [tool.pyright]
-exclude = ["src/wbi/legacy", "matlab/"]
+exclude = ["src/wbi/legacy", "matlab/", "build/"]
 
 [project.optional-dependencies]
 dev = [

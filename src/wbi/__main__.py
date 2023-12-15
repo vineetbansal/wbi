@@ -1,5 +1,5 @@
 from wbi.commands import remote
-from wbi.commands import flash_finder
+from wbi.commands import flash_finder, centerline
 
 
 def main():
@@ -11,7 +11,7 @@ def main():
 
     parser.add_argument("--version", action="version", version="wbi " + wbi.__version__)
 
-    modules = (remote, flash_finder)
+    modules = (remote, flash_finder, centerline)
 
     subparsers = parser.add_subparsers(title="Choose a command")
     subparsers.required = True
