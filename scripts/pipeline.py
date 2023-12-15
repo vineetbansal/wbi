@@ -3,12 +3,14 @@ from wbi.legacy.make_centerline import make_centerline
 from wbi.legacy.flash_finder import flash_finder
 
 
-FOLDER = "/bsa"
+FOLDER = "/bs"
 """
 .
 ├── alignments.mat
 ├── CameraFrameData.txt
 ├── framesDetails.txt
+├── other-frameSynchronous.txt
+├── other-volumeMetadataUtilities.txt
 ├── LowMagBrain20231018_143646
 │   ├── cam1.avi
 │   └── CamData.txt
@@ -18,13 +20,9 @@ FOLDER = "/bsa"
 if __name__ == "__main__":
     e = Experiment(FOLDER)
 
-    flash_finder(input_folder=FOLDER)
+    flash_finder(input_folder=FOLDER, max_frames=10)
 
     # This is for bead alignment and only works for /bsa
-    e.generate_median_images()
+    # e.generate_median_images()
 
-    make_centerline(
-        input_folder=FOLDER,
-        model_path="../tests/test_data/best_model.h5",
-        plot=True,
-    )
+    make_centerline(input_folder=FOLDER, plot=True, max_frames=10)

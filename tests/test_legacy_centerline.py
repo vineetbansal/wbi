@@ -10,7 +10,6 @@ def test_make_centerline(data_folder):
         output_folder = temp_dir
         _ = make_centerline(
             input_folder=data_folder,
-            model_path=os.path.join(data_folder, "best_model.h5"),
             output_folder=output_folder,
             max_frames=max_frames,
             plot=True,

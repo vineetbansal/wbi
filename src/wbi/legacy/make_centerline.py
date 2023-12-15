@@ -15,6 +15,8 @@ import matplotlib.pyplot as plt
 from wbi.legacy.cline.centerline_funcs import extract_centerline
 from wbi.legacy.cline.plot_cline import plot_centerline
 from wbi.matlab.imresize import imresize
+from wbi.data.ondemand import get_file
+
 
 def find_worm_centered(center_line):
     numframes = center_line.shape[2]
@@ -40,7 +42,7 @@ def find_worm_centered(center_line):
     return wormcentered
 
 
-def clineFromVideo(path_cam, model_path, output_folder=None,plot=False, max_frames=None):
+def clineFromVideo(path_cam, output_folder=None,plot=False, max_frames=None):
     """
     A method that does approximately the same thing as CenterlineFromVideo.Video2Centerlines()
     """
@@ -49,7 +51,7 @@ def clineFromVideo(path_cam, model_path, output_folder=None,plot=False, max_fram
     if max_frames is not None:
         frame_count = min(frame_count, max_frames)
 
-    model = load_model(model_path)
+    model = load_model(get_file("best_model"))
 
     # create a new folder containing the centerline images frame-by-frame
 
@@ -121,13 +123,13 @@ def clineFromVideo(path_cam, model_path, output_folder=None,plot=False, max_fram
     return cline_arr
 
 
-def make_centerline(input_folder, model_path, output_folder=None, max_frames=None, plot=False):
+def make_centerline(input_folder, output_folder=None, max_frames=None, plot=False):
     avi_path = glob.glob(f'{input_folder}/LowMagBrain*/cam1.avi')
     if not len(avi_path) == 1:
         raise FileNotFoundError("The cam1.avi file is not found")
     else:
         avi_path = avi_path[0]
-        center_line = clineFromVideo(avi_path, model_path, output_folder=output_folder, plot=plot, max_frames=max_frames)
+        center_line = clineFromVideo(avi_path, output_folder=output_folder, plot=plot, max_frames=max_frames)
 
         if output_folder is None:
             output_folder = os.path.join(input_folder, 'BehaviorAnalysis')
