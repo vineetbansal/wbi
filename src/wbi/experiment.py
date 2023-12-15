@@ -87,7 +87,7 @@ class Experiment:
                 plt.imsave(
                     os.path.join(output_folder_lowmag, f"cam1_{i}"),
                     arr=img,
-                    format="tif",
+                    format="tiff",
                 )
             else:
                 # A more natural way to visualize median images
