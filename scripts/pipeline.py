@@ -9,6 +9,8 @@ FOLDER = "/bs"
 ├── alignments.mat
 ├── CameraFrameData.txt
 ├── framesDetails.txt
+├── other-frameSynchronous.txt
+├── other-volumeMetadataUtilities.txt
 ├── LowMagBrain20231018_143646
 │   ├── cam1.avi
 │   └── CamData.txt
