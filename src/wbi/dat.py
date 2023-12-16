@@ -4,7 +4,6 @@ import os.path
 import logging
 import numpy as np
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -58,3 +57,9 @@ class Dat:
             chunk = chunk.reshape((-1, self.cols, self.rows * 2))
             chunk = np.transpose(chunk, (2, 1, 0))
             return chunk
+
+    def chunks(self, chunksize=9):
+        total_frames = self.n_frames
+        for offset in range(0, total_frames, chunksize):
+            count = min(chunksize, total_frames - offset)
+            yield self.load(count=count, offset=offset)
