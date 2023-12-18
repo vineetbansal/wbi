@@ -77,3 +77,53 @@ class LowMagTiming:
         timing["frame"] = timing["frame"] + 1
 
         self.timing = timing
+
+
+class FrameSynchronous:
+    def __init__(self, file_or_folder_path):
+        if os.path.isdir(file_or_folder_path):
+            sync_file = os.path.join(file_or_folder_path, "other-frameSynchronous.txt")
+            assert os.path.exists(sync_file), f"{sync_file} not found"
+        else:
+            sync_file = file_or_folder_path
+
+        self.sync_file = sync_file
+        self._load_sync_file()
+
+    def _load_sync_file(self):
+        sync = pd.read_csv(self.sync_file, sep="\t")
+        assert list(sync.columns) == [
+            "Frame index",
+            "Piezo position (V)",
+            "Piezo direction (+-1)",
+            "Volume index",
+            "Ludl X",
+            "Ludl Y",
+        ], "Unexpected columns in timing file"
+
+        # Simplify column names
+        sync.columns = [
+            "frame",
+            "piezo_position",
+            "piezo_direction",
+            "volume_index",
+            "ludl_x",
+            "ludl_y",
+        ]
+
+        sync = sync.sort_values(by="frame").drop_duplicates(subset="frame", keep=False)
+        # frame_index = 1 .. n
+        sync["frame_index"] = sync["frame"] - sync["frame"].min() + 1
+        sync["frame_index_diff"] = sync["frame_index"].diff()
+
+        # frame_chunk = 1 .. m, indicating a contiguous set of frames
+        median_frame_index_diff = sync["frame_index_diff"].median()
+        sync["chunk"] = (
+            sync["frame_index_diff"] > (10 * median_frame_index_diff)
+        ).cumsum()
+
+        self.sync = sync
+        self.n_chunks = sync["chunk"].max() + 1
+
+    def __len__(self):
+        return len(self.sync)
