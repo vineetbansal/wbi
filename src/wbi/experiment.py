@@ -5,9 +5,8 @@ import cv2
 import logging
 import matplotlib.pyplot as plt
 from scipy.io import savemat
-from wbi.timing import Timing, LowMagTiming
+from wbi.timing import Timing, LowMagTiming, FrameSynchronous
 from wbi.dat import Dat
-
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +16,7 @@ class Experiment:
         self.folder_path = folder_path
         self.timing = Timing(folder_path)
         self.dat = Dat(folder_path)
+        self.frames_sync = FrameSynchronous(folder_path)
 
         lowmag_folders = glob.glob(f"{folder_path}/LowMagBrain*")
         if len(lowmag_folders) != 1:
@@ -121,3 +121,46 @@ class Experiment:
             sep="\t",
             index=False,
         )
+
+    def configure_positions(self):
+        volume_index = np.zeros_like(
+            self.timing.timing["frame_index"], dtype=np.float64
+        )
+        z_pos = np.zeros_like(self.timing.timing["frame_index"], dtype=np.float64)
+        x_pos = np.ones_like(self.timing.timing["frame_index"]) * -1000
+        y_pos = np.ones_like(self.timing.timing["frame_index"]) * -1000
+        volume_index_old = -1
+        volume_sign_old = 0
+
+        for index in self.timing.timing["frame_index"]:
+            matching_index_position = np.where(self.frames_sync.sync["index"] == index)[
+                0
+            ][0]
+
+            if matching_index_position:
+                if (
+                    self.frames_sync.sync["piezo_direction"][matching_index_position]
+                    != volume_sign_old
+                ):
+                    volume_index_old += 1
+
+                volume_sign_old = self.frames_sync.sync["piezo_direction"][
+                    matching_index_position
+                ]
+                volume_index[index] = volume_index_old
+                z_pos[index] = self.frames_sync.sync["piezo_position"][
+                    matching_index_position
+                ]
+                x_pos[index] = self.frames_sync.sync["ludl_x"][matching_index_position]
+                y_pos[index] = self.frames_sync.sync["ludl_y"][matching_index_position]
+            else:
+                volume_index[index] = volume_index_old
+
+        n_positions = len(z_pos)
+        for index in np.arange(n_positions):
+            if z_pos[index] == 0.0 and 0 < index < n_positions - 1:
+                z_pos[index] = (z_pos[index - 1] + z_pos[index + 1]) / 2.0
+            if x_pos[index] == -1000.0 and 0 < index < n_positions - 1:
+                x_pos[index] = (x_pos[index - 1] + x_pos[index + 1]) / 2.0
+            if y_pos[index] == -1000.0 and 0 < index < n_positions - 1:
+                y_pos[index] = (y_pos[index - 1] + y_pos[index + 1]) / 2.0
