@@ -30,3 +30,23 @@ def test_dat_chunks(data_folder):
         assert (
             chunk.shape == expected_shape
         ), f"Chunk {i} shape mismatch: expected {expected_shape}, got {chunk.shape}"
+
+
+def test_dat_chunks2(data_folder):
+    dat = Dat(data_folder)
+    chunk_size = np.random.randint(1, 20)
+    chunks = dat.chunks(chunk_size=chunk_size)
+    for chunk in chunks:
+        try:
+            assert chunk.shape == (dat.rows * 2, dat.cols, chunk_size)
+        except AssertionError:
+            try:
+                next(chunks)
+            except StopIteration:
+                assert chunk.shape == (
+                    dat.rows * 2,
+                    dat.cols,
+                    dat.n_frames % chunk_size,
+                )
+            else:
+                raise RuntimeError("Expected last iteration")
