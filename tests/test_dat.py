@@ -18,16 +18,35 @@ def test_dat_load1(data_folder):
 
 def test_dat_chunks(data_folder):
     dat = Dat(data_folder)
-    chunk_size = 9
+
+    chunk_size = np.random.randint(1, 20)
     for chunk in dat.chunks(chunk_size=chunk_size):
-        assert chunk.shape == (dat.rows * 2, dat.cols, chunk_size)
+        try:
+            assert chunk.shape == (dat.rows * 2, dat.cols, chunk_size)
+        except AssertionError:
+            try:
+                next(dat.chunks(chunk_size=chunk_size))
+            except StopIteration:
+                assert chunk.shape == (
+                    dat.rows * 2,
+                    dat.cols,
+                    dat.n_frames % chunk_size,
+                )
+            else:
+                raise RuntimeError("Expected Last Iteration")
 
 
 def test_dat_chunks1(data_folder):
     dat = Dat(data_folder)
-    chunk_size = 19
-    for chunk in dat.chunks(chunk_size=chunk_size):
-        remaining = dat.n_frames - (dat.n_frames // chunk_size) * chunk_size
-        assert (chunk.shape == (dat.rows * 2, dat.cols, chunk_size)) or (
-            chunk.shape == (dat.rows * 2, dat.cols, remaining)
-        )
+    chunk_size = np.random.randint(1, 20)
+
+    for i, chunk in enumerate(dat.chunks(chunk_size=chunk_size), 1):
+        if i * chunk_size <= dat.n_frames:
+            expected_shape = (dat.rows * 2, dat.cols, chunk_size)
+        else:
+            remaining_frames = dat.n_frames % chunk_size
+            expected_shape = (dat.rows * 2, dat.cols, remaining_frames or chunk_size)
+
+        assert (
+            chunk.shape == expected_shape
+        ), f"Chunk {i} shape mismatch: expected {expected_shape}, got {chunk.shape}"
