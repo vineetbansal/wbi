@@ -80,7 +80,9 @@ class LowMagTiming:
 
 
 class FrameSynchronous:
-    def __init__(self, file_or_folder_path):
+    def __init__(self, file_or_folder_path, latency_shift):
+        self.latency_shift = latency_shift
+
         if os.path.isdir(file_or_folder_path):
             sync_file = os.path.join(file_or_folder_path, "other-frameSynchronous.txt")
             assert os.path.exists(sync_file), f"{sync_file} not found"
