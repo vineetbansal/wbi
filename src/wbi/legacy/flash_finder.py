@@ -4,15 +4,15 @@ from scipy.io import savemat
 from wbi.experiment import Experiment
 
 
-def flash_finder(input_folder, output_folder=None, chunksize=9, max_frames=None):
+def flash_finder(input_folder, experiment, output_folder=None, chunk_size=4000, max_frames=None):
     output_folder = output_folder or input_folder
 
-    experiment = Experiment(input_folder)
+    experiment = experiment
     dat = experiment.dat
     timing = experiment.timing
 
     # TODO: Why are we doing this?
-    chunk_max_size = chunksize // 6  # number of frames to read at once
+    chunk_max_size = chunk_size // 6  # number of frames to read at once
     brightness = np.zeros(dat.n_frames)
     stdev = np.zeros(dat.n_frames)
     index = 0
