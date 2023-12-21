@@ -93,7 +93,7 @@ class FrameSynchronous:
         self._load_sync_file()
 
     def _load_sync_file(self):
-        sync = pd.read_csv(self.sync_file, sep="\t")
+        sync = pd.read_csv(self.sync_file, sep="\t", index_col=False)
         assert list(sync.columns) == [
             "Frame index",
             "Piezo position (V)",
@@ -113,7 +113,9 @@ class FrameSynchronous:
             "ludl_y",
         ]
 
-        sync = sync.sort_values(by="frame").drop_duplicates(subset="frame", keep=False)
+        sync = sync.sort_values(by="frame").drop_duplicates(
+            subset="frame", keep="first"
+        )
         # frame_index = 1 .. n
         sync["frame_index"] = sync["frame"] - sync["frame"].min() + 1
         sync["frame_index_diff"] = sync["frame_index"].diff()

@@ -1,5 +1,6 @@
 import numpy as np
 import os
+from scipy.io import savemat
 from wbi.experiment import Experiment
 
 
@@ -39,3 +40,26 @@ def flash_finder(input_folder, output_folder=None, chunksize=9, max_frames=None)
         elif flash_frame != repeated_flash_loc[index - 1] + 1:
             flash_loc.append(flash_frame)
     flash_loc = np.array(flash_loc)
+
+    x_pos, y_pos, z_pos = experiment.configure_frame_positions()
+    volume_index = experiment.configure_frame_timings(input_folder)
+
+    matlab_dict = {}
+    data_all = {
+    "imageIdx": experiment.timing.timing["frame_index"].values.reshape(experiment.timing.timing["frame_index"].shape[0], 1),
+    "frameTime": experiment.timing.timing["time"].values.reshape(experiment.timing.timing["time"].shape[0], 1),
+    "flashLoc": (flash_loc + 1).reshape(flash_loc.shape[0], 1),
+    "stackIdx": (volume_index + 1).reshape(volume_index.shape[0], 1),
+    "imSTD": stdev.reshape(stdev.shape[0], 1),
+    "imAvg": brightness.reshape(brightness.shape[0], 1),
+    "xPos": x_pos.reshape(x_pos.shape[0], 1),
+    "yPos": y_pos.reshape(y_pos.shape[0], 1),
+    "Z": z_pos.reshape(z_pos.shape[0], 1)
+    }
+
+    matlab_dict["dataAll"] = data_all
+
+    savemat(os.path.join(output_folder, "hiResData.mat"), matlab_dict)
+
+    with open(os.path.join(output_folder, "submissionParameters.txt"), "w") as f:
+        f.write(f"NFrames {volume_index[-1]}")
