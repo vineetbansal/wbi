@@ -1,6 +1,10 @@
 import os.path
 import tempfile
+from wbi.experiment import Experiment
 from wbi.legacy.flash_finder import flash_finder
+
+FOLDER = "/bs"
+e = Experiment(FOLDER)
 
 
 def test_flash_finder(data_folder):
@@ -12,7 +16,10 @@ def test_flash_finder(data_folder):
     #   other-volumeMetadataUtilities.txt
     with tempfile.TemporaryDirectory() as temp_dir:
         _ = flash_finder(
-            input_folder=data_folder, output_folder=temp_dir, chunk_size=42
+            input_folder=data_folder,
+            experiment=e,
+            output_folder=temp_dir,
+            chunk_size=42,
         )
 
         # output files created
