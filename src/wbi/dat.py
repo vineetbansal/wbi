@@ -58,7 +58,7 @@ class Dat:
             chunk = np.transpose(chunk, (2, 1, 0))
             return chunk
 
-    def chunks(self, chunk_size=9):
+    def chunks(self, chunk_size=4000):
         total_frames = self.n_frames
         for offset in range(0, total_frames, chunk_size):
             count = min(chunk_size, total_frames - offset)
