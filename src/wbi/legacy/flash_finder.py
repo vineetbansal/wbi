@@ -1,8 +1,6 @@
 import numpy as np
 import os
 from scipy.io import savemat
-from wbi.experiment import Experiment
-
 
 def flash_finder(input_folder, experiment, output_folder=None, chunk_size=4000, max_frames=None):
     output_folder = output_folder or input_folder
@@ -46,8 +44,8 @@ def flash_finder(input_folder, experiment, output_folder=None, chunk_size=4000, 
 
     matlab_dict = {}
     data_all = {
-    "imageIdx": experiment.timing.timing["frame_index"].values.reshape(experiment.timing.timing["frame_index"].shape[0], 1),
-    "frameTime": experiment.timing.timing["time"].values.reshape(experiment.timing.timing["time"].shape[0], 1),
+    "imageIdx": timing.timing["frame_index"].values.reshape(timing.timing["frame_index"].shape[0], 1),
+    "frameTime": timing.timing["time"].values.reshape(timing.timing["time"].shape[0], 1),
     "flashLoc": (flash_loc + 1).reshape(flash_loc.shape[0], 1),
     "stackIdx": (volume_index + 1).reshape(volume_index.shape[0], 1),
     "imSTD": stdev.reshape(stdev.shape[0], 1),
