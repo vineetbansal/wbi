@@ -3,9 +3,6 @@ import tempfile
 from wbi.experiment import Experiment
 from wbi.legacy.flash_finder import flash_finder
 
-FOLDER = "/bs"
-e = Experiment(FOLDER)
-
 
 def test_flash_finder(data_folder):
     # input_folder needs to have
@@ -15,6 +12,7 @@ def test_flash_finder(data_folder):
     #   other-frameSynchronous.txt
     #   other-volumeMetadataUtilities.txt
     with tempfile.TemporaryDirectory() as temp_dir:
+        e = Experiment(data_folder)
         _ = flash_finder(
             input_folder=data_folder,
             experiment=e,
