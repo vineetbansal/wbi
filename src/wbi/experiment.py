@@ -5,9 +5,8 @@ import cv2
 import logging
 import matplotlib.pyplot as plt
 from scipy.io import savemat
-from wbi.timing import Timing, LowMagTiming
+from wbi.timing import Timing, LowMagTiming, FrameSynchronous
 from wbi.dat import Dat
-
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +16,7 @@ class Experiment:
         self.folder_path = folder_path
         self.timing = Timing(folder_path)
         self.dat = Dat(folder_path)
+        self.frames_sync = FrameSynchronous(folder_path, latency_shift=0)
 
         lowmag_folders = glob.glob(f"{folder_path}/LowMagBrain*")
         if len(lowmag_folders) != 1:
@@ -121,3 +121,99 @@ class Experiment:
             sep="\t",
             index=False,
         )
+
+    def configure_frame_positions(self):
+        volume_index = np.zeros_like(self.timing.timing["frame"], dtype=np.float64)
+        z_pos = np.zeros_like(self.timing.timing["frame"], dtype=np.float64)
+        x_pos = np.ones_like(self.timing.timing["frame"]) * -1000
+        y_pos = np.ones_like(self.timing.timing["frame"]) * -1000
+        volume_index_old = -1
+        volume_sign_old = 0
+
+        for i, frame in enumerate(self.timing.timing["frame"]):
+            matching_indexes = np.where(self.frames_sync.sync["frame"] == frame)[0]
+
+            if len(matching_indexes):
+                matching_index = matching_indexes[0]
+                try:
+                    if (
+                        self.frames_sync.sync["piezo_direction"][matching_index]
+                        != volume_sign_old
+                    ):
+                        volume_index_old += 1
+
+                    volume_sign_old = self.frames_sync.sync["piezo_direction"][
+                        matching_index
+                    ]
+                    volume_index[i] = volume_index_old
+                    z_pos[i] = self.frames_sync.sync["piezo_position"][matching_index]
+                    x_pos[i] = self.frames_sync.sync["ludl_x"][matching_index]
+                    y_pos[i] = self.frames_sync.sync["ludl_y"][matching_index]
+                except KeyError:
+                    pass
+            else:
+                volume_index[i] = volume_index_old
+
+        n_positions = len(z_pos)
+        for index in np.arange(n_positions):
+            if z_pos[index] == 0.0 and 0 < index < n_positions - 1:
+                z_pos[index] = (z_pos[index - 1] + z_pos[index + 1]) / 2.0
+            if x_pos[index] == -1000.0 and 0 < index < n_positions - 1:
+                x_pos[index] = (x_pos[index - 1] + x_pos[index + 1]) / 2.0
+            if y_pos[index] == -1000.0 and 0 < index < n_positions - 1:
+                y_pos[index] = (y_pos[index - 1] + y_pos[index + 1]) / 2.0
+
+        return x_pos, y_pos, z_pos
+
+    def configure_frame_timings(self, data_folder):
+        frame_count = self.timing.timing["frame"].astype(int)
+        frame_count_daq = self.frames_sync.sync["frame"].astype(int)
+
+        if self.frames_sync.latency_shift:
+            frame_count_daq += self.frames_sync.latency_shift
+            logger.info(f"Applying latency shift {self.frames_sync.latency_shift}")
+
+        d_frame_count = np.diff(frame_count)
+
+        for i in np.arange(len(frame_count) - 1):
+            if d_frame_count[i] == 0 and d_frame_count[i - 1] == 2:
+                frame_count[i] -= 1
+
+        volume_index = np.ones_like(frame_count) * -10
+        volume_direction = np.empty(len(frame_count))
+        volume_direction[:] = np.nan
+        piezo_position = np.full(frame_count.shape, np.nan, dtype=float)
+        for i, element in enumerate(frame_count):
+            try:
+                index_in_daq = (
+                    np.where(frame_count_daq == element)[0][0]
+                    if len(np.where(frame_count_daq == element)[0]) > 0
+                    else None
+                )
+                piezo_position[i] = self.frames_sync.sync["piezo_position"][
+                    index_in_daq
+                ]
+                volume_direction[i] = (
+                    self.frames_sync.sync["piezo_direction"][index_in_daq] + 1
+                ) // 2
+            except KeyError:
+                pass
+
+        nans, non_zeros = np.isnan(piezo_position), lambda z: z.nonzero()[0]
+        piezo_position[nans] = np.interp(
+            non_zeros(nans), non_zeros(~nans), piezo_position[~nans]
+        )
+        volume_direction[nans] = np.interp(
+            non_zeros(nans), non_zeros(~nans), volume_direction[~nans]
+        ).astype(np.int8)
+
+        smn = 4
+        sm = np.ones(smn) / smn
+        piezo_sm = np.convolve(piezo_position, sm, mode="same")
+
+        volume_direction[:-1] = np.sign(np.diff(piezo_sm))
+        volume_direction[-1] = volume_direction[-2]
+        volume_direction = (volume_direction + 1) // 2
+        volume_index = np.cumsum(np.absolute(np.diff(volume_direction)))
+
+        return volume_index
