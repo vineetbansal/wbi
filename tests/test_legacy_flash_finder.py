@@ -11,7 +11,9 @@ def test_flash_finder(data_folder):
     #   other-frameSynchronous.txt
     #   other-volumeMetadataUtilities.txt
     with tempfile.TemporaryDirectory() as temp_dir:
-        _ = flash_finder(input_folder=data_folder, output_folder=temp_dir, chunksize=42)
+        _ = flash_finder(
+            input_folder=data_folder, output_folder=temp_dir, chunk_size=42
+        )
 
         # output files created
         assert os.path.exists(os.path.join(temp_dir, "hiResData.mat"))

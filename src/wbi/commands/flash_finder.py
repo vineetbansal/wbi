@@ -45,7 +45,7 @@ def main(args):
     logger.info(f"Input: {input_folder} Output: {output_folder} ChunkSize: {chunksize}")
 
     flash_finder(
-        input_folder=input_folder, output_folder=output_folder, chunksize=chunksize
+        input_folder=input_folder, output_folder=output_folder, chunk_size=chunksize
     )
 
 
