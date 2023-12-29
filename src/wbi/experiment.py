@@ -1,4 +1,5 @@
 import numpy as np
+import os
 import os.path
 import glob
 import cv2
@@ -7,6 +8,8 @@ import matplotlib.pyplot as plt
 from scipy.io import savemat
 from wbi.timing import Timing, LowMagTiming, FrameSynchronous
 from wbi.dat import Dat
+from wbi import config
+
 
 logger = logging.getLogger(__name__)
 
@@ -122,7 +125,7 @@ class Experiment:
             index=False,
         )
 
-    def configure_frame_positions(self):
+    def get_frame_positions(self):
         volume_index = np.zeros_like(self.timing.timing["frame"], dtype=np.float64)
         z_pos = np.zeros_like(self.timing.timing["frame"], dtype=np.float64)
         x_pos = np.ones_like(self.timing.timing["frame"]) * -1000
@@ -165,7 +168,7 @@ class Experiment:
 
         return x_pos, y_pos, z_pos
 
-    def configure_frame_timings(self, data_folder):
+    def get_frame_timings(self):
         frame_count = self.timing.timing["frame"].astype(int)
         frame_count_daq = self.frames_sync.sync["frame"].astype(int)
 
@@ -179,7 +182,6 @@ class Experiment:
             if d_frame_count[i] == 0 and d_frame_count[i - 1] == 2:
                 frame_count[i] -= 1
 
-        volume_index = np.ones_like(frame_count) * -10
         volume_direction = np.empty(len(frame_count))
         volume_direction[:] = np.nan
         piezo_position = np.full(frame_count.shape, np.nan, dtype=float)
@@ -207,9 +209,9 @@ class Experiment:
             non_zeros(nans), non_zeros(~nans), volume_direction[~nans]
         ).astype(np.int8)
 
-        smn = 4
-        sm = np.ones(smn) / smn
-        piezo_sm = np.convolve(piezo_position, sm, mode="same")
+        smoothing_window_size = config.flash_finder.piezo_smoothing_window_size
+        smoothing_window = np.ones(smoothing_window_size) / smoothing_window_size
+        piezo_sm = np.convolve(piezo_position, smoothing_window, mode="same")
 
         volume_direction[:-1] = np.sign(np.diff(piezo_sm))
         volume_direction[-1] = volume_direction[-2]
@@ -217,3 +219,66 @@ class Experiment:
         volume_index = np.cumsum(np.absolute(np.diff(volume_direction)))
 
         return volume_index
+
+    def flash_finder(self, output_folder=None, chunk_size=4000, max_frames=None):
+        output_folder = output_folder or self.folder_path
+
+        dat = self.dat
+        timing = self.timing
+
+        brightness = np.zeros(dat.n_frames)
+        stdev = np.zeros(dat.n_frames)
+
+        for index, chunk in enumerate(dat.chunks(chunk_size=chunk_size)):
+            chunk = np.transpose(chunk, (2, 1, 0)).reshape(-1, dat.cols * dat.rows * 2)
+            brightness[index * chunk_size : (index + 1) * chunk_size] = np.average(
+                chunk, axis=1
+            )
+            stdev[index * chunk_size : (index + 1) * chunk_size] = np.std(
+                chunk.astype(np.float64), axis=1
+            )
+
+        adjusted_brightness = brightness - np.average(brightness)
+
+        stdev_brightness = np.std(adjusted_brightness)
+        (repeated_flash_loc,) = np.where(
+            adjusted_brightness > stdev_brightness * config.flash_finder.std_factor
+        )
+
+        if not repeated_flash_loc:
+            flash_loc = np.array([])
+        else:
+            flash_loc = [repeated_flash_loc[0]]
+            for index, flash_frame in enumerate(repeated_flash_loc, start=1):
+                if flash_frame != repeated_flash_loc[index - 1] + 1:
+                    flash_loc.append(flash_frame)
+            flash_loc = np.array(flash_loc)
+
+        x_pos, y_pos, z_pos = self.get_frame_positions()
+        volume_index = self.get_frame_timings()
+
+        savemat(
+            os.path.join(output_folder, "hiResData.mat"),
+            {
+                "dataAll": {
+                    "imageIdx": timing.timing[
+                        "frame_index"
+                    ].values.reshape(  # type:ignore
+                        timing.timing["frame_index"].shape[0], 1
+                    ),
+                    "frameTime": timing.timing["time"].values.reshape(  # type:ignore
+                        timing.timing["time"].shape[0], 1
+                    ),
+                    "flashLoc": (flash_loc + 1).reshape(flash_loc.shape[0], 1),
+                    "stackIdx": (volume_index + 1).reshape(volume_index.shape[0], 1),
+                    "imSTD": stdev.reshape(stdev.shape[0], 1),
+                    "imAvg": brightness.reshape(brightness.shape[0], 1),
+                    "xPos": x_pos.reshape(x_pos.shape[0], 1),
+                    "yPos": y_pos.reshape(y_pos.shape[0], 1),
+                    "Z": z_pos.reshape(z_pos.shape[0], 1),
+                }
+            },
+        )
+
+        with open(os.path.join(output_folder, "submissionParameters.txt"), "w") as f:
+            f.write(f"NFrames {volume_index[-1]}")
