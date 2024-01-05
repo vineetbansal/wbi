@@ -30,7 +30,7 @@ class Timing:
         # one; make it so that it jumps by +1 in both these steps
         frame = timing["frame"]
         mask = (frame.diff() == 2) & (frame.diff(-1) == 0)
-        frame[mask] -= 1
+        frame[mask][:] -= 1
 
         timing = timing.sort_values(by="frame")
         # timing = timing.drop_duplicates(subset="frame")
