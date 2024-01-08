@@ -33,7 +33,6 @@ class Timing:
         frame[mask][:] -= 1
 
         timing = timing.sort_values(by="frame")
-        # timing = timing.drop_duplicates(subset="frame")
 
         # frame_index = 1 .. n
         timing["frame_index"] = timing["frame"] - timing["frame"].min() + 1
@@ -41,24 +40,30 @@ class Timing:
 
         # frame_chunk = 1 .. m, indicating a contiguous set of frames
         median_frame_index_diff = timing["frame_index_diff"].median()
-        timing["chunk"] = (
+        timing["_chunk"] = (
             timing["frame_index_diff"] > (10 * median_frame_index_diff)
         ).cumsum()
 
         timing["dc_offset"] = 5.0  # TODO: ??
         timing["stddev"] = 1.0
 
+        # Save the original row indices (since these correspond to the slices
+        # of the Dat object in order, and then change the index for fast
+        # joins with other DataFrames with corresponding "frame" information
+        timing["_original_row_index"] = np.arange(len(timing))
         timing.set_index("frame", drop=False, inplace=True)
 
         self.timing = timing
-        self.n_chunks = timing["chunk"].max() + 1
+        self.n_chunks = timing["_chunk"].max() + 1
 
     def __len__(self):
         return len(self.timing)
 
     def get_start_end_row_indices(self, chunk):
-        chunk_timing = self.timing[self.timing["chunk"] == chunk]
-        return int(chunk_timing.index.min()), int(chunk_timing.index.max())  # type: ignore
+        chunk_timing = self.timing[self.timing["_chunk"] == chunk]
+        row_min = int(chunk_timing["_original_row_index"].min())
+        row_max = int(chunk_timing["_original_row_index"].max())
+        return row_min, row_max
 
     def merge_sync(self, sync):
         df = self.timing.join(sync.sync, how="left", lsuffix="_l", rsuffix="_r")
