@@ -1,9 +1,7 @@
 import argparse
 import logging
 from wbi.experiment import Experiment
-from wbi.legacy.flash_finder import flash_finder
 
-FOLDER = "/bs"
 logger = logging.getLogger(__name__)
 
 
@@ -30,8 +28,6 @@ def add_args(parser):
 
 
 def main(args):
-    e = Experiment(FOLDER)
-
     if not isinstance(args, argparse.Namespace):
         args = add_args(argparse.ArgumentParser()).parse_args(args)
 
@@ -47,9 +43,8 @@ def main(args):
     )
     logger.info(f"Input: {input_folder} Output: {output_folder} ChunkSize: {chunksize}")
 
-    flash_finder(
-        input_folder=input_folder,
-        experiment=e,
+    experiment = Experiment(input_folder)
+    experiment.flash_finder(
         output_folder=output_folder,
         chunk_size=chunksize,
     )
