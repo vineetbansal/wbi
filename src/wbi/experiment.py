@@ -1,12 +1,15 @@
 import numpy as np
+import os
 import os.path
 import glob
 import cv2
 import logging
 import matplotlib.pyplot as plt
 from scipy.io import savemat
+from tqdm import tqdm
 from wbi.timing import Timing, LowMagTiming, FrameSynchronous
 from wbi.dat import Dat
+from wbi import config
 
 logger = logging.getLogger(__name__)
 
@@ -14,9 +17,10 @@ logger = logging.getLogger(__name__)
 class Experiment:
     def __init__(self, folder_path):
         self.folder_path = folder_path
-        self.timing = Timing(folder_path)
         self.dat = Dat(folder_path)
-        self.frames_sync = FrameSynchronous(folder_path, latency_shift=0)
+        self.timing = Timing(folder_path)
+        self.frames_sync = FrameSynchronous(folder_path)
+        self.timing_dataframe = self.timing.merge_sync(self.frames_sync)
 
         lowmag_folders = glob.glob(f"{folder_path}/LowMagBrain*")
         if len(lowmag_folders) != 1:
@@ -24,7 +28,6 @@ class Experiment:
         self.lowmag_folder = lowmag_folders[0]
 
         self.timing_lowmag = LowMagTiming(self.lowmag_folder)
-
         self.avi_files = glob.glob(f"{self.lowmag_folder}/*.avi")
 
     def median_images_himag(self):
@@ -122,98 +125,61 @@ class Experiment:
             index=False,
         )
 
-    def configure_frame_positions(self):
-        volume_index = np.zeros_like(self.timing.timing["frame"], dtype=np.float64)
-        z_pos = np.zeros_like(self.timing.timing["frame"], dtype=np.float64)
-        x_pos = np.ones_like(self.timing.timing["frame"]) * -1000
-        y_pos = np.ones_like(self.timing.timing["frame"]) * -1000
-        volume_index_old = -1
-        volume_sign_old = 0
+    def flash_finder(self, output_folder=None, chunk_size=4000, max_frames=None):
+        output_folder = output_folder or self.folder_path
 
-        for i, frame in enumerate(self.timing.timing["frame"]):
-            matching_indexes = np.where(self.frames_sync.sync["frame"] == frame)[0]
+        dat = self.dat
+        n_frames = dat.n_frames if max_frames is None else min(max_frames, dat.n_frames)
+        brightness = np.zeros(n_frames)
+        stdev = np.zeros(n_frames)
 
-            if len(matching_indexes):
-                matching_index = matching_indexes[0]
-                try:
-                    if (
-                        self.frames_sync.sync["piezo_direction"][matching_index]
-                        != volume_sign_old
-                    ):
-                        volume_index_old += 1
-
-                    volume_sign_old = self.frames_sync.sync["piezo_direction"][
-                        matching_index
-                    ]
-                    volume_index[i] = volume_index_old
-                    z_pos[i] = self.frames_sync.sync["piezo_position"][matching_index]
-                    x_pos[i] = self.frames_sync.sync["ludl_x"][matching_index]
-                    y_pos[i] = self.frames_sync.sync["ludl_y"][matching_index]
-                except KeyError:
-                    pass
-            else:
-                volume_index[i] = volume_index_old
-
-        n_positions = len(z_pos)
-        for index in np.arange(n_positions):
-            if z_pos[index] == 0.0 and 0 < index < n_positions - 1:
-                z_pos[index] = (z_pos[index - 1] + z_pos[index + 1]) / 2.0
-            if x_pos[index] == -1000.0 and 0 < index < n_positions - 1:
-                x_pos[index] = (x_pos[index - 1] + x_pos[index + 1]) / 2.0
-            if y_pos[index] == -1000.0 and 0 < index < n_positions - 1:
-                y_pos[index] = (y_pos[index - 1] + y_pos[index + 1]) / 2.0
-
-        return x_pos, y_pos, z_pos
-
-    def configure_frame_timings(self, data_folder):
-        frame_count = self.timing.timing["frame"].astype(int)
-        frame_count_daq = self.frames_sync.sync["frame"].astype(int)
-
-        if self.frames_sync.latency_shift:
-            frame_count_daq += self.frames_sync.latency_shift
-            logger.info(f"Applying latency shift {self.frames_sync.latency_shift}")
-
-        d_frame_count = np.diff(frame_count)
-
-        for i in np.arange(len(frame_count) - 1):
-            if d_frame_count[i] == 0 and d_frame_count[i - 1] == 2:
-                frame_count[i] -= 1
-
-        volume_index = np.ones_like(frame_count) * -10
-        volume_direction = np.empty(len(frame_count))
-        volume_direction[:] = np.nan
-        piezo_position = np.full(frame_count.shape, np.nan, dtype=float)
-        for i, element in enumerate(frame_count):
-            try:
-                index_in_daq = (
-                    np.where(frame_count_daq == element)[0][0]
-                    if len(np.where(frame_count_daq == element)[0]) > 0
-                    else None
+        with tqdm(total=n_frames) as pbar:
+            for index, chunk in enumerate(
+                dat.chunks(chunk_size=chunk_size, max_frames=n_frames)
+            ):
+                brightness[index * chunk_size : (index + 1) * chunk_size] = np.average(
+                    chunk, axis=(0, 1)
                 )
-                piezo_position[i] = self.frames_sync.sync["piezo_position"][
-                    index_in_daq
-                ]
-                volume_direction[i] = (
-                    self.frames_sync.sync["piezo_direction"][index_in_daq] + 1
-                ) // 2
-            except KeyError:
-                pass
+                stdev[index * chunk_size : (index + 1) * chunk_size] = np.std(
+                    chunk, axis=(0, 1)
+                )
+                pbar.update(chunk_size)
 
-        nans, non_zeros = np.isnan(piezo_position), lambda z: z.nonzero()[0]
-        piezo_position[nans] = np.interp(
-            non_zeros(nans), non_zeros(~nans), piezo_position[~nans]
+        adjusted_brightness = brightness - np.average(brightness)
+        stdev_brightness = np.std(adjusted_brightness)
+
+        (flash_loc,) = np.where(
+            adjusted_brightness > stdev_brightness * config.flash_finder.std_factor
         )
-        volume_direction[nans] = np.interp(
-            non_zeros(nans), non_zeros(~nans), volume_direction[~nans]
-        ).astype(np.int8)
 
-        smn = 4
-        sm = np.ones(smn) / smn
-        piezo_sm = np.convolve(piezo_position, sm, mode="same")
+        # Remove flash frames that are consecutive and thus represent the same flash
+        flash_loc = flash_loc[np.nonzero(np.diff(flash_loc, prepend=-np.inf) != 1)]
 
-        volume_direction[:-1] = np.sign(np.diff(piezo_sm))
-        volume_direction[-1] = volume_direction[-2]
-        volume_direction = (volume_direction + 1) // 2
-        volume_index = np.cumsum(np.absolute(np.diff(volume_direction)))
+        data = self.timing_dataframe
+        # All the data we wish to save in a .mat file
+        mat_data = {
+            "imageIdx": data["frame_index"].to_numpy()[:, np.newaxis],
+            "frameTime": data["time"].to_numpy()[:, np.newaxis],
+            "flashLoc": (flash_loc + 1)[:, np.newaxis],  # 1-indexed
+            # TODO: Legacy code is taking a diff without a prepend, thus ends up 1 shorter than all the rest
+            # of the arrays here. We take values from 1: to emulate legacy behavior
+            "stackIdx": (data["volume_index"].to_numpy() + 1)[1:, np.newaxis],
+            # 1-indexed
+            "imSTD": stdev[:, np.newaxis],
+            "imAvg": brightness[:, np.newaxis],
+            "xPos": data["ludl_x"].to_numpy()[:, np.newaxis],
+            "yPos": data["ludl_y"].to_numpy()[:, np.newaxis],
+            "Z": data["piezo_position"].to_numpy()[:, np.newaxis],
+        }
 
-        return volume_index
+        savemat(
+            os.path.join(output_folder, "hiResData.mat"),
+            mat_data,
+        )
+
+        # TODO: The following file is generated for legacy reasons
+        max_volume_index = data["volume_index"].max()
+        with open(os.path.join(output_folder, "submissionParameters.txt"), "w") as f:
+            f.write(f"NFrames {max_volume_index}")
+
+        return mat_data

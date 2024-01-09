@@ -1,5 +1,11 @@
  # General package configuration can go here
 
+ flash_finder:
+   # Detected flashes have brightness these many stds above the average
+   std_factor: 10
+   # Smoothing window size for piezo positions
+   piezo_smoothing_window_size: 4
+
  # A key purely for testing purposes
  test:
    string: "Hello"
