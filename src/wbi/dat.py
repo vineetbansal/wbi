@@ -58,8 +58,10 @@ class Dat:
             chunk = np.transpose(chunk, (2, 1, 0))
             return chunk
 
-    def chunks(self, chunk_size=4000):
-        total_frames = self.n_frames
+    def chunks(self, chunk_size=4000, max_frames=None):
+        total_frames = (
+            self.n_frames if max_frames is None else min(max_frames, self.n_frames)
+        )
         for offset in range(0, total_frames, chunk_size):
             count = min(chunk_size, total_frames - offset)
             yield self.load(count=count, offset=offset)

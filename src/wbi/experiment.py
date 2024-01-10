@@ -1,13 +1,15 @@
 import numpy as np
+import os
 import os.path
 import glob
 import cv2
 import logging
 import matplotlib.pyplot as plt
 from scipy.io import savemat
-from wbi.timing import Timing, LowMagTiming
+from tqdm import tqdm
+from wbi.timing import Timing, LowMagTiming, FrameSynchronous
 from wbi.dat import Dat
-
+from wbi import config
 
 logger = logging.getLogger(__name__)
 
@@ -15,8 +17,10 @@ logger = logging.getLogger(__name__)
 class Experiment:
     def __init__(self, folder_path):
         self.folder_path = folder_path
-        self.timing = Timing(folder_path)
         self.dat = Dat(folder_path)
+        self.timing = Timing(folder_path)
+        self.frames_sync = FrameSynchronous(folder_path)
+        self.timing_dataframe = self.timing.merge_sync(self.frames_sync)
 
         lowmag_folders = glob.glob(f"{folder_path}/LowMagBrain*")
         if len(lowmag_folders) != 1:
@@ -24,7 +28,6 @@ class Experiment:
         self.lowmag_folder = lowmag_folders[0]
 
         self.timing_lowmag = LowMagTiming(self.lowmag_folder)
-
         self.avi_files = glob.glob(f"{self.lowmag_folder}/*.avi")
 
     def median_images_himag(self):
@@ -121,3 +124,62 @@ class Experiment:
             sep="\t",
             index=False,
         )
+
+    def flash_finder(self, output_folder=None, chunk_size=4000, max_frames=None):
+        output_folder = output_folder or self.folder_path
+
+        dat = self.dat
+        n_frames = dat.n_frames if max_frames is None else min(max_frames, dat.n_frames)
+        brightness = np.zeros(n_frames)
+        stdev = np.zeros(n_frames)
+
+        with tqdm(total=n_frames) as pbar:
+            for index, chunk in enumerate(
+                dat.chunks(chunk_size=chunk_size, max_frames=n_frames)
+            ):
+                brightness[index * chunk_size : (index + 1) * chunk_size] = np.average(
+                    chunk, axis=(0, 1)
+                )
+                stdev[index * chunk_size : (index + 1) * chunk_size] = np.std(
+                    chunk, axis=(0, 1)
+                )
+                pbar.update(chunk_size)
+
+        adjusted_brightness = brightness - np.average(brightness)
+        stdev_brightness = np.std(adjusted_brightness)
+
+        (flash_loc,) = np.where(
+            adjusted_brightness > stdev_brightness * config.flash_finder.std_factor
+        )
+
+        # Remove flash frames that are consecutive and thus represent the same flash
+        flash_loc = flash_loc[np.nonzero(np.diff(flash_loc, prepend=-np.inf) != 1)]
+
+        data = self.timing_dataframe
+        # All the data we wish to save in a .mat file
+        mat_data = {
+            "imageIdx": data["frame_index"].to_numpy()[:, np.newaxis],
+            "frameTime": data["time"].to_numpy()[:, np.newaxis],
+            "flashLoc": (flash_loc + 1)[:, np.newaxis],  # 1-indexed
+            # TODO: Legacy code is taking a diff without a prepend, thus ends up 1 shorter than all the rest
+            # of the arrays here. We take values from 1: to emulate legacy behavior
+            "stackIdx": (data["volume_index"].to_numpy() + 1)[1:, np.newaxis],
+            # 1-indexed
+            "imSTD": stdev[:, np.newaxis],
+            "imAvg": brightness[:, np.newaxis],
+            "xPos": data["ludl_x"].to_numpy()[:, np.newaxis],
+            "yPos": data["ludl_y"].to_numpy()[:, np.newaxis],
+            "Z": data["piezo_position"].to_numpy()[:, np.newaxis],
+        }
+
+        savemat(
+            os.path.join(output_folder, "hiResData.mat"),
+            mat_data,
+        )
+
+        # TODO: The following file is generated for legacy reasons
+        max_volume_index = data["volume_index"].max()
+        with open(os.path.join(output_folder, "submissionParameters.txt"), "w") as f:
+            f.write(f"NFrames {max_volume_index}")
+
+        return mat_data

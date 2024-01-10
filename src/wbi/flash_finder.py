@@ -21,11 +21,11 @@ def flash_finder(input_folder, output_folder=None, chunksize=4000, max_frames=No
     # try to be robust to renaming
     try:
         filesize = os.stat(filename).st_size
-        f = open(filename, 'rb')
+        f = open(filename, "rb")
     except FileNotFoundError:
         filename = os.path.join(input_folder, "frames_U16_1024x512.dat")
         filesize = os.stat(filename).st_size
-        f = open(filename, 'rb')
+        f = open(filename, "rb")
     # Find out how many iterations you have to do
     nFrames = filesize // (1024 * 512 * 2)
     if max_frames is not None:
@@ -39,12 +39,13 @@ def flash_finder(input_folder, output_folder=None, chunksize=4000, max_frames=No
     for i in tqdm.tqdm(np.arange(nIterations)):
         chunk = np.fromfile(f, dtype=np.uint16, count=chunkMaxSize * 1024 * 512)
         frames = chunk.reshape((chunkMaxSize, 1024 * 512))
-        brightness[i * chunkMaxSize:(i + 1) * chunkMaxSize] = np.average(frames,
-                                                                         axis=1)
-        stdev[i * chunkMaxSize:(i + 1) * chunkMaxSize] = np.std(
-            frames.astype(np.float64), axis=1)
+        brightness[i * chunkMaxSize : (i + 1) * chunkMaxSize] = np.average(
+            frames, axis=1
+        )
+        stdev[i * chunkMaxSize : (i + 1) * chunkMaxSize] = np.std(
+            frames.astype(np.float64), axis=1
+        )
         # f.seek(chunkMaxSize*1024*512*2*i) #not needed, np.fromfile moves the pointer
-
 
     # In cases where the number of frames in .dat file aren't exact multiple of 6 * chunk_size
     if remainingframes > 0:
@@ -61,13 +62,13 @@ def flash_finder(input_folder, output_folder=None, chunksize=4000, max_frames=No
     brightnessB = brightness - np.average(brightness)
     if os.path.exists(os.path.join(input_folder, "BFP.txt")):
         # TODO: Move Magic number somewhere else
-        stdevbrightness = np.std(brightnessB[:nIterations - 12000])
+        stdevbrightness = np.std(brightnessB[: nIterations - 12000])
     else:
         stdevbrightness = np.std(brightnessB)
 
     # If the flash shows up in two or more consecutive frames, this will list a
     # flash in each of them.
-    flashLocRepeated, = np.where(brightnessB > stdevbrightness * 10)
+    (flashLocRepeated,) = np.where(brightnessB > stdevbrightness * 10)
 
     # Select only first frame of multiple in which the same flash shows up.
     flashLoc = []
@@ -81,20 +82,28 @@ def flash_finder(input_folder, output_folder=None, chunksize=4000, max_frames=No
 
     flashLoc = np.array(flashLoc)
 
-    framesDetails = np.loadtxt(os.path.join(input_folder, "framesDetails.txt"), skiprows=1).T
-    framesSync = np.loadtxt(os.path.join(input_folder, "other-frameSynchronous.txt"), skiprows=1).T
-    utilities = np.loadtxt(os.path.join(input_folder, "other-volumeMetadataUtilities.txt"),
-                           skiprows=1).T
+    framesDetails = np.loadtxt(
+        os.path.join(input_folder, "framesDetails.txt"), skiprows=1
+    ).T
+    framesSync = np.loadtxt(
+        os.path.join(input_folder, "other-frameSynchronous.txt"), skiprows=1
+    ).T
+
+    # TODO: this wasn't commented on the lab's version, only did so to pass the pre-commit checks
+    # utilities = np.loadtxt(
+    #    os.path.join(input_folder, "other-volumeMetadataUtilities.txt"), skiprows=1
+    # ).T
 
     frameIdx = framesDetails[1]
     frameTime = framesDetails[0]
-    volumeIndex = np.zeros_like(framesDetails[1],
-                                dtype=np.float64)  # was np.int32....
+    volumeIndex = np.zeros_like(framesDetails[1], dtype=np.float64)  # was np.int32....
     Z = np.zeros_like(framesDetails[1], dtype=np.float64)
-    xPos = np.ones_like(
-        framesDetails[1]) * -1000  # large number so we can check for this later
-    yPos = np.ones_like(
-        framesDetails[1]) * -1000  # large number so we can check for this later
+    xPos = (
+        np.ones_like(framesDetails[1]) * -1000
+    )  # large number so we can check for this later
+    yPos = (
+        np.ones_like(framesDetails[1]) * -1000
+    )  # large number so we can check for this later
     ZframeSync = framesSync[1]
 
     vindold = -1
@@ -133,7 +142,9 @@ def flash_finder(input_folder, output_folder=None, chunksize=4000, max_frames=No
     frameTime = framesDetails[0]
     frameCount = framesDetails[1].astype(int)
 
-    frameSync = np.loadtxt(os.path.join(input_folder, "other-frameSynchronous.txt"), skiprows=1).T
+    frameSync = np.loadtxt(
+        os.path.join(input_folder, "other-frameSynchronous.txt"), skiprows=1
+    ).T
     frameCountDAQ = frameSync[0].astype(int)
     latencyShift = 0
     if latencyShift != 0:
@@ -149,7 +160,7 @@ def flash_finder(input_folder, output_folder=None, chunksize=4000, max_frames=No
     dframeCount = np.diff(frameCount)
 
     for i in np.arange(len(frameCount) - 1):
-        if (dframeCount[i] == 0 and dframeCount[i - 1] == 2):
+        if dframeCount[i] == 0 and dframeCount[i - 1] == 2:
             frameCountCorr[i] -= 1
 
     frameCount = frameCountCorr
@@ -168,14 +179,17 @@ def flash_finder(input_folder, output_folder=None, chunksize=4000, max_frames=No
             volumeIndex[i] = volumeIndexDAQ[indexInDAQ]
             Z[i] = ZDAQ[indexInDAQ]
             volumeDirection[i] = (volumeDirectionDAQ[indexInDAQ] + 1) // 2
-        except:
+        # TODO: this was simply a bare exception in the lab's version
+        # Changed it to pass the pre-commit checks
+        except ValueError:
             pass
 
     # Interpolate missing values for Z and volumeDirection
     nans, x = np.isnan(Z), lambda z: z.nonzero()[0]
     Z[nans] = np.interp(x(nans), x(~nans), Z[~nans])
-    volumeDirection[nans] = np.interp(x(nans), x(~nans),
-                                      volumeDirection[~nans]).astype(np.int8)
+    volumeDirection[nans] = np.interp(x(nans), x(~nans), volumeDirection[~nans]).astype(
+        np.int8
+    )
 
     # Smooth Z
     smn = 4
@@ -191,22 +205,23 @@ def flash_finder(input_folder, output_folder=None, chunksize=4000, max_frames=No
 
     Mat = {}
     dataAll = {
-        'imageIdx': (frameIdx - frameIdx[0] + 1).reshape((frameIdx.shape[0], 1)),
-        'frameTime': (frameTime).reshape((frameTime.shape[0], 1)),
-        'flashLoc': (flashLoc + 1).reshape((flashLoc.shape[0], 1)),
-        'stackIdx': (volumeIndex + 1).reshape((volumeIndex.shape[0], 1)),
-        'imSTD': stdev.reshape((stdev.shape[0], 1)),
-        'imAvg': brightness.reshape((brightness.shape[0], 1)),
-        'xPos': xPos.reshape((xPos.shape[0], 1)),
-        'yPos': yPos.reshape((yPos.shape[0], 1)),
-        'Z': Z.reshape((Z.shape[0], 1))
+        "imageIdx": (frameIdx - frameIdx[0] + 1).reshape((frameIdx.shape[0], 1)),
+        "frameTime": (frameTime).reshape((frameTime.shape[0], 1)),
+        "flashLoc": (flashLoc + 1).reshape((flashLoc.shape[0], 1)),
+        "stackIdx": (volumeIndex + 1).reshape((volumeIndex.shape[0], 1)),
+        "imSTD": stdev.reshape((stdev.shape[0], 1)),
+        "imAvg": brightness.reshape((brightness.shape[0], 1)),
+        "xPos": xPos.reshape((xPos.shape[0], 1)),
+        "yPos": yPos.reshape((yPos.shape[0], 1)),
+        "Z": Z.reshape((Z.shape[0], 1)),
     }
-    Mat['dataAll'] = dataAll
+    Mat["dataAll"] = dataAll
 
     sio.savemat(os.path.join(output_folder, "hiResData.mat"), Mat)
 
     stringa = "NFrames " + str(
-        int(volumeIndex[-1]))  # needs to be int or tk doesn't like it
+        int(volumeIndex[-1])
+    )  # needs to be int or tk doesn't like it
 
     f = open(os.path.join(output_folder, "submissionParameters.txt"), "w")
     f.write(stringa)
