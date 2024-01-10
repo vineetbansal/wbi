@@ -2,35 +2,32 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 import os.path
 import paramiko
 import tempfile
+import logging
+
+logger = logging.getLogger(__name__)
 
 
-def connect(client=None, username=None, hostname=None):
-    if client is None:
-        assert (
-            hostname is not None and username is not None
-        ), "Specify hostname and username"
-        client = paramiko.SSHClient()
-        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        client.connect(hostname, username=username)
-    else:
-        hostname = client.get_transport().getpeername()[0]
-        username = client.get_transport().get_username()
+def connect(username, hostname):
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    client.connect(hostname, username=username)
 
-    return client, username, hostname
+    return client
 
 
 def submit(
     template_name,
-    mins,
-    remote_temp_dir="/scratch/gpfs/{username}/tmp",
-    chdir=None,
-    client=None,
-    username=None,
+    timelimit=None,
     hostname=None,
+    username=None,
     cluster=False,
+    interactive=False,
+    show_stdout=True,
+    show_stderr=False,
+    remote_temp_dir="/scratch/gpfs/{username}/tmp",
     **kwargs,
 ):
-    client, username, hostname = connect(client, username, hostname)
+    client = connect(username, hostname)
 
     env = Environment(
         loader=PackageLoader("wbi.remote.templates", package_path=""),
@@ -39,7 +36,7 @@ def submit(
 
     template = env.get_template(f"{template_name}.jinja")
     jobfile = template.render(
-        mins=mins, chdir=chdir, template_name=template_name, **kwargs
+        timelimit=timelimit, template_name=template_name, **kwargs
     )
 
     temp_file = tempfile.NamedTemporaryFile(delete=False)
@@ -50,37 +47,41 @@ def submit(
 
     temp_basename = os.path.basename(temp_file.name)
     remote_temp_script_path = os.path.join(remote_temp_dir, temp_basename)
-    remote_temp_stdout_path = os.path.join(remote_temp_dir, f"{temp_basename}_stdout")
     with client.open_sftp() as sftp:
         sftp.put(temp_file.name, remote_temp_script_path)
+    client.exec_command(
+        f"mkdir -p {remote_temp_dir} && chmod +x {remote_temp_script_path}"
+    )
 
     if cluster:
-        sbatch_flags = " ".join(
-            [
+        if interactive:
+            assert timelimit is not None, "Specify Time limit"
+            cmd_flags = (f"--time {timelimit}",)
+            cmd = "srun"
+        else:
+            cmd_flags = (
+                f"--time {timelimit}" if timelimit is not None else "",
                 "--parsable",
-                f"--time 00:{mins}:00",
-                f"--chdir {chdir}" if chdir is not None else "",
-                f"--out={remote_temp_stdout_path}",
-            ]
-        )
-        cmd = f"sbatch {sbatch_flags} {remote_temp_script_path}"
-        stdin, stdout, stderr = client.exec_command(cmd)
-        job_id = int(stdout.read().decode())
+            )
+            cmd = "sbatch"
+
+        cmd_flags = " ".join(cmd_flags)
+        cmd = f"{cmd} {cmd_flags} {remote_temp_script_path}"
     else:
-        chmod_command = f"chmod +x {remote_temp_script_path}"
-        client.exec_command(chmod_command)
+        cmd = f"bash -c {remote_temp_script_path}"
 
-        cmd = f"bash -c {remote_temp_script_path} >> {remote_temp_stdout_path}"
-        client.exec_command(cmd)
-        job_id = None  # no job id for local execution
+    logger.info(f"Executing remote command: {cmd}")
+    _, stdout, stderr = client.exec_command(cmd)
 
-    return job_id, remote_temp_stdout_path
+    if cluster and not interactive:
+        job_id = int(stdout.read().decode())
+        logger.info(f"Submitted job with ID {job_id}")
+    else:
+        if show_stdout:
+            stdout = "\n".join(stdout.readlines()).strip()
+            logger.info(f"Remote stdout\n{stdout}")
+        if show_stderr:
+            stderr = "\n".join(stderr.readlines()).strip()
+            logger.info(f"Remote stderr\n{stderr}")
 
-
-def parse_remote_stdout(client, remote_temp_stdout_path):
-    try:
-        cmd = f"cat {remote_temp_stdout_path}"
-        stdin, stdout, stderr = client.exec_command(cmd)
-        return stdout.read().decode()
-    except FileNotFoundError:
-        return None
+    client.close()
