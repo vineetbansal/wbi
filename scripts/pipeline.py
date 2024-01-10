@@ -20,7 +20,7 @@ FOLDER = "/bs"
 if __name__ == "__main__":
     e = Experiment(FOLDER)
 
-    flash_finder(input_folder=FOLDER, experiment=e, max_frames=10)
+    flash_finder(input_folder=FOLDER, max_frames=10)
 
     # This is for bead alignment and only works for /bsa
     # e.generate_median_images()
