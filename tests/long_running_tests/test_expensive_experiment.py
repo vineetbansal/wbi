@@ -1,9 +1,11 @@
 import tempfile
 import os.path
+import pytest
 from wbi.experiment import Experiment
 from wbi.data.ondemand import get_file
 
 
+@pytest.mark.expensive
 def test_flash_finder():
     files = [
         "framesDetails.txt",
