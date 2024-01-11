@@ -77,6 +77,7 @@ def clineFromVideo(path_cam, output_folder=None,plot=False, max_frames=None):
 
         image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
+        # image is 2048 x 2448
         # This is a hacky solution to only infer on part of the image, this limits the fov.
         # The following lines preprocess the image for prediction
         image = image[:, :2048]

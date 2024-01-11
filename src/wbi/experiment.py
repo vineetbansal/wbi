@@ -9,6 +9,7 @@ from scipy.io import savemat
 from tqdm import tqdm
 from wbi.timing import Timing, LowMagTiming, FrameSynchronous
 from wbi.dat import Dat
+from wbi.hires import HiResData
 from wbi import config
 
 logger = logging.getLogger(__name__)
@@ -20,6 +21,7 @@ class Experiment:
         self.dat = Dat(folder_path)
         self.timing = Timing(folder_path)
         self.frames_sync = FrameSynchronous(folder_path)
+        self.hires_data = HiResData(folder_path)
         self.timing_dataframe = self.timing.merge_sync(self.frames_sync)
 
         lowmag_folders = glob.glob(f"{folder_path}/LowMagBrain*")
@@ -181,5 +183,8 @@ class Experiment:
         max_volume_index = data["volume_index"].max()
         with open(os.path.join(output_folder, "submissionParameters.txt"), "w") as f:
             f.write(f"NFrames {max_volume_index}")
+
+        # Generate low-mag data (initially handled by MATLAB code)
+        self.generate_flashtrack_files(output_folder)
 
         return mat_data
