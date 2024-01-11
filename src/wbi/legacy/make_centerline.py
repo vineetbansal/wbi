@@ -51,7 +51,7 @@ def clineFromVideo(path_cam, output_folder=None,plot=False, max_frames=None):
     if max_frames is not None:
         frame_count = min(frame_count, max_frames)
 
-    model = load_model(get_file("best_model"))
+    model = load_model(get_file("best_model.h5"))
 
     # create a new folder containing the centerline images frame-by-frame
 
