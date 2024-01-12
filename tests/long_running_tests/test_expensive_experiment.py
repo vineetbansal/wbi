@@ -1,9 +1,7 @@
 import tempfile
-import pytest
 from wbi.experiment import Experiment
 
 
-@pytest.mark.expensive
 def test_flash_finder(expensive_data_folder):
     with tempfile.TemporaryDirectory() as temp_dir:
         e = Experiment(expensive_data_folder)

@@ -43,9 +43,8 @@ wbi = ["config.yaml", "data/*"]
 write_to = "src/wbi/_version.py"
 
 [tool.pytest.ini_options]
-testpaths = [
-    "tests"
-]
+testpaths = ["tests"]
+norecursedirs = ["long_running_tests"]
 
 [tool.pyright]
 exclude = ["src/wbi/legacy", "matlab/", "build/"]
