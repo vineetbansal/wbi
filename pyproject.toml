@@ -43,13 +43,8 @@ wbi = ["config.yaml", "data/*"]
 write_to = "src/wbi/_version.py"
 
 [tool.pytest.ini_options]
-testpaths = [
-    "tests"
-]
-markers = [
-    "expensive" # marks tests as expensive to run (deselect with '-m "not expensive"')
-]
-addopts = "-m 'not expensive'"
+testpaths = ["tests"]
+norecursedirs = ["long_running_tests"]
 
 [tool.pyright]
 exclude = ["src/wbi/legacy", "matlab/", "build/"]
