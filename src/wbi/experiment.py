@@ -22,7 +22,7 @@ class Experiment:
         self.frames_sync = FrameSynchronous(folder_path)
         self.timing_dataframe = self.timing.merge_sync(self.frames_sync)
 
-        lowmag_folders = glob.glob(f"{folder_path}/LowMagBrain*")
+        lowmag_folders = glob.glob(f"{folder_path}/LowMagBrain*/")
         if len(lowmag_folders) != 1:
             raise RuntimeError(f"Cannot find LowMagBrain* folder in {folder_path}")
         self.lowmag_folder = lowmag_folders[0]
