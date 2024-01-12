@@ -17,19 +17,19 @@ files = {
         "hash": "md5:4feda1bad12dccfd1ab333bda7bf19dc",
     },
     "sCMOS_Frames_U16_1024x512.dat": {
-        "url": "https://dl.dropboxusercontent.com/scl/fi/j18s8hfj30ou26hg82g45/sCMOS_Frames_U16_1024x512.dat?rlkey=eqivmm1o8wd4m34wjml64rc52&dl=0",
+        "url": "https://www.dropbox.com/scl/fi/j18s8hfj30ou26hg82g45/sCMOS_Frames_U16_1024x512.dat?rlkey=eqivmm1o8wd4m34wjml64rc52&dl=1",
         "hash": "md5:e5d9d9437a77f5d28b90fc03b2f43d9a",
     },
     "framesDetails.txt": {
-        "url": "https://dl.dropboxusercontent.com/scl/fi/y4yj624x96r1bcqinoged/framesDetails.txt?rlkey=8m8kdp4tozeiwdyxpm8z4you1&dl=0",
+        "url": "https://www.dropbox.com/scl/fi/y4yj624x96r1bcqinoged/framesDetails.txt?rlkey=8m8kdp4tozeiwdyxpm8z4you1&dl=1",
         "hash": "md5:e65422d0ca888c3fcee6ecbff3cb62a8",
     },
     "other-frameSynchronous.txt": {
-        "url": "https://dl.dropboxusercontent.com/scl/fi/anusvpiiyrrhemr1bscod/other-frameSynchronous.txt?rlkey=qqa3e9n3g1fp1lm8568v022hz&dl=0",
+        "url": "https://www.dropbox.com/scl/fi/anusvpiiyrrhemr1bscod/other-frameSynchronous.txt?rlkey=qqa3e9n3g1fp1lm8568v022hz&dl=1",
         "hash": "md5:d39e74b65e2b3907a3182b52012dfc42",
     },
     "other-volumeMetadataUtilities.txt": {
-        "url": "https://dl.dropboxusercontent.com/scl/fi/c7clmlqqcxsy8wasdlmi8/other-volumeMetadataUtilities.txt?rlkey=lseq3jjm61qtjol1glk8mxwwq&dl=0",
+        "url": "https://www.dropbox.com/scl/fi/c7clmlqqcxsy8wasdlmi8/other-volumeMetadataUtilities.txt?rlkey=lseq3jjm61qtjol1glk8mxwwq&dl=1",
         "hash": "md5:ce1ef0aea3bb8af25499d74241c941c8",
     },
     "LowMagBrain20231024_153442": {
