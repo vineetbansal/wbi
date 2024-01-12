@@ -1,22 +1,12 @@
 import tempfile
-import os.path
 import pytest
 from wbi.experiment import Experiment
-from wbi.data.ondemand import get_file
 
 
 @pytest.mark.expensive
-def test_flash_finder():
-    files = [
-        "framesDetails.txt",
-        "LowMagBrain20231024_153442",
-        "other-frameSynchronous.txt",
-        "other-volumeMetadataUtilities.txt",
-        "sCMOS_Frames_U16_1024x512.dat",
-    ]
+def test_flash_finder(expensive_data_folder):
     with tempfile.TemporaryDirectory() as temp_dir:
-        data_folder = os.path.dirname(list(map(get_file, files))[0])
-        e = Experiment(data_folder)
+        e = Experiment(expensive_data_folder)
         mat_data = e.flash_finder(
             output_folder=temp_dir,
         )
