@@ -18,7 +18,7 @@ files = {
     },
     "sCMOS_Frames_U16_1024x512.dat": {
         "url": "https://www.dropbox.com/scl/fi/j18s8hfj30ou26hg82g45/sCMOS_Frames_U16_1024x512.dat?rlkey=eqivmm1o8wd4m34wjml64rc52&dl=1",
-        "hash": "md5:e5d9d9437a77f5d28b90fc03b2f43d9a",
+        "hash": None,
     },
     "framesDetails.txt": {
         "url": "https://www.dropbox.com/scl/fi/y4yj624x96r1bcqinoged/framesDetails.txt?rlkey=8m8kdp4tozeiwdyxpm8z4you1&dl=1",
