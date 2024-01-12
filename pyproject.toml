@@ -46,6 +46,10 @@ write_to = "src/wbi/_version.py"
 testpaths = [
     "tests"
 ]
+markers = [
+    "expensive" # marks tests as expensive to run (deselect with '-m "not expensive"')
+]
+addopts = "-m 'not expensive'"
 
 [tool.pyright]
 exclude = ["src/wbi/legacy", "matlab/", "build/"]
