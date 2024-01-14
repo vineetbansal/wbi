@@ -162,6 +162,24 @@ class QtImageStackViewer(QWidget):
                     label += ", value=" + str(value)
         self.label.setText(label)
 
+    def wheelEvent(self, event):
+        if self.n_frames > 1:
+            i = self._scrollbar.value()
+            if event.angleDelta().y() < 0:
+                if i < self.n_frames - 1:
+                    self._scrollbar.setValue(i + 1)
+                    self.updateFrames()
+            else:
+                if i > 0:
+                    self._scrollbar.setValue(i - 1)
+                    self.updateFrames()
+            return
+
+        QWidget.wheelEvent(self, event)
+
+    def leaveEvent(self, event):
+        self.updateLabel()
+
     def validate_points(self):
         """
         Make sure that for each frame, the number of points in each image is the same.
