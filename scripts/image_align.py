@@ -1,11 +1,9 @@
-import cv2
 import sys
 import numpy as np
+from PIL import Image, ImageOps
 from PyQt6.QtWidgets import QApplication
 from QtImageStackViewer import QtImageStackViewer
 from wbi.experiment import Experiment
-
-FOLDER = "/Users/aa9078/Documents/Projects/LeiferLab/Data/20231024_alignment_test/BrainScanner_20231018_143745/"
 
 
 def process_images(e, target_shape, n_frames):
@@ -40,39 +38,31 @@ def process_images(e, target_shape, n_frames):
 
 
 def resize_or_pad(image, target_shape):
-    height_ratio, width_ratio = (
-        target_shape[0] / image.shape[0],
-        target_shape[1] / image.shape[1],
-    )
+    if not isinstance(image, Image.Image):
+        image = Image.fromarray(image)
 
+    height_ratio, width_ratio = (
+        target_shape[0] / image.height,
+        target_shape[1] / image.width,
+    )
     ratio = min(height_ratio, width_ratio)
 
-    resized_image = cv2.resize(
-        image,
-        (int(image.shape[1] * ratio), int(image.shape[0] * ratio)),
-        interpolation=cv2.INTER_AREA,
-    )
-    pad_vert = target_shape[0] - resized_image.shape[0]
+    resized_image = image.resize((int(image.width * ratio), int(image.height * ratio)))
+
+    pad_vert = target_shape[0] - resized_image.height
     pad_top, pad_bottom = pad_vert // 2, pad_vert - (pad_vert // 2)
-    pad_horiz = target_shape[1] - resized_image.shape[1]
+    pad_horiz = target_shape[1] - resized_image.width
     pad_left, pad_right = pad_horiz // 2, pad_horiz - (pad_horiz // 2)
-    padded_image = cv2.copyMakeBorder(
-        resized_image,
-        pad_top,
-        pad_bottom,
-        pad_left,
-        pad_right,
-        cv2.BORDER_CONSTANT,
-        value=[0, 0, 0],
+
+    padded_image = ImageOps.expand(
+        resized_image, border=(pad_left, pad_top, pad_right, pad_bottom)
     )
 
     return padded_image
 
 
-if __name__ == "__main__":
-    e = Experiment(FOLDER)
-
-    image = e.median_images_himag()
+def image_align(input_folder):
+    e = Experiment(input_folder)
 
     _data = process_images(e, (512, 512), 1)
 
@@ -100,3 +90,9 @@ if __name__ == "__main__":
 
     viewer.show()
     sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    image_align(
+        "/Users/aa9078/Documents/Projects/LeiferLab/Data/20231024_alignment_test/BrainScanner_20231018_143745/"
+    )
