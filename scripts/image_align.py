@@ -1,31 +1,80 @@
+import cv2
 import sys
 import numpy as np
 from PyQt6.QtWidgets import QApplication
 from QtImageStackViewer import QtImageStackViewer
-from PIL import Image, ImageSequence
+from wbi.experiment import Experiment
+
+FOLDER = "/Users/aa9078/Documents/Projects/LeiferLab/Data/20231024_alignment_test/BrainScanner_20231018_143745/"
+
+
+def process_images(e, target_shape, n_frames):
+    himag_images = e.median_images_himag()
+    lomag_images = e.median_images_lomag()
+
+    processed_images = []
+
+    for himag, lomag in zip(himag_images, lomag_images):
+        red_channel = resize_or_pad(himag[: himag.shape[0] // 2, :], target_shape)
+        green_channel = resize_or_pad(himag[himag.shape[0] // 2 :, :], target_shape)
+        lomag = resize_or_pad(lomag, target_shape)
+        processed_images.extend([red_channel, green_channel, lomag])
+
+    processed_images = np.array(processed_images)
+    n_images = len(processed_images)
+    height, width = processed_images[0].shape
+
+    transformed_images = np.zeros(
+        (n_images, height, width, 3, n_frames), dtype=np.uint8
+    )
+
+    for i, img in enumerate(processed_images):
+        img_expanded = np.expand_dims(img, axis=-1)
+
+        channel_index = 0 if i % 2 == 0 else 1
+        transformed_images[
+            i, ..., channel_index, :
+        ] = img_expanded  # Use 1 for green channel
+
+    return transformed_images[::17]
+
+
+def resize_or_pad(image, target_shape):
+    height_ratio, width_ratio = (
+        target_shape[0] / image.shape[0],
+        target_shape[1] / image.shape[1],
+    )
+
+    ratio = min(height_ratio, width_ratio)
+
+    resized_image = cv2.resize(
+        image,
+        (int(image.shape[1] * ratio), int(image.shape[0] * ratio)),
+        interpolation=cv2.INTER_AREA,
+    )
+    pad_vert = target_shape[0] - resized_image.shape[0]
+    pad_top, pad_bottom = pad_vert // 2, pad_vert - (pad_vert // 2)
+    pad_horiz = target_shape[1] - resized_image.shape[1]
+    pad_left, pad_right = pad_horiz // 2, pad_horiz - (pad_horiz // 2)
+    padded_image = cv2.copyMakeBorder(
+        resized_image,
+        pad_top,
+        pad_bottom,
+        pad_left,
+        pad_right,
+        cv2.BORDER_CONSTANT,
+        value=[0, 0, 0],
+    )
+
+    return padded_image
 
 
 if __name__ == "__main__":
+    e = Experiment(FOLDER)
 
-    # -------- Sample input data -------- #
-    image = Image.open("sample_sequence.gif")
-    _data = np.array(
-        [np.array(frame.convert("RGB")) for frame in ImageSequence.Iterator(image)]
-    )
+    image = e.median_images_himag()
 
-    # Create 3 identical images from the data above, but with different colors
-    data = np.stack([_data, _data, _data], axis=0)
-    for i in range(3):
-        all_except_i = [j for j in range(3) if j != i]
-        data[i, ..., all_except_i] = 0
-
-    data = data.transpose((0, 2, 3, 4, 1))
-
-    # data needs to be in the shape (n_images, height, width, 3, n_frames)
-    # and uint8 in dtype
-    print("data shape:", data.shape)
-    print("data type:", data.dtype)
-    # -------- Sample input data -------- #
+    _data = process_images(e, (512, 512), 1)
 
     app = QApplication(sys.argv)
 
@@ -38,7 +87,7 @@ if __name__ == "__main__":
         {0: ((74, 31), (53, 64.113)), 1: ((32.53, 40.5),), 3: ((95, 66),)},
         {0: ((31, 22), (22, 20)), 1: ((63.1, 53.22),), 3: ((76, 42),)},
     ]
-    viewer = QtImageStackViewer(data, points=existing_points)
+    viewer = QtImageStackViewer(_data, points=existing_points)
 
     def get_points():
         print("selected points:")
