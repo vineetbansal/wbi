@@ -1,4 +1,3 @@
-from itertools import islice
 import sys
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,17 +10,12 @@ def process_images(e):
     himag_images = e.median_images_himag()
     lomag_images = e.median_images_lomag()
 
-    min_count = min(
-        len(list(e.median_images_himag())), len(list(e.median_images_lomag()))
-    )
-    processed_images = {"image1": [], "image2": [], "image3": []}
+    processed_images = {"S2AHiRes": [], "Hi2LowResF": [], "lowResFluor2BF": []}
 
-    for himag, lomag in zip(
-        islice(himag_images, min_count), islice(lomag_images, min_count)
-    ):
-        processed_images["image1"].append(himag[: himag.shape[0] // 2, :])
-        processed_images["image2"].append(himag[himag.shape[0] // 2 :, :])
-        processed_images["image3"].append(lomag)
+    for himag, lomag in zip(himag_images, lomag_images):
+        processed_images["S2AHiRes"].append(himag[: himag.shape[0] // 2, :])
+        processed_images["Hi2LowResF"].append(himag[himag.shape[0] // 2 :, :])
+        processed_images["lowResFluor2BF"].append(lomag)
 
     for key, img in processed_images.items():
         normalized_image = img / np.max(img)
@@ -39,15 +33,27 @@ def image_align(experiment, output_folder=None):
 
     app = QApplication(sys.argv)
 
-    # what to prepopulate the viewer with; Can be None
+    # what to pre-populate the viewer with; Can be None
     # format: dict of dicts mapping
     #   image name => point_dict
     # where point_dict is a mapping from frame number (0-indexed)
     # to list of points
     existing_points = {
-        "image1": {0: ((20, 25), (36.32, 40.11)), 1: ((100.52, 80.5),), 3: ((85, 92),)},
-        "image2": {0: ((74, 31), (53, 64.113)), 1: ((32.53, 40.5),), 3: ((95, 66),)},
-        "image3": {0: ((31, 22), (22, 20)), 1: ((63.1, 53.22),), 3: ((76, 42),)},
+        "S2AHiRes": {
+            0: ((20, 25), (36.32, 40.11)),
+            1: ((100.52, 80.5),),
+            3: ((85, 92),),
+        },
+        "Hi2LowResF": {
+            0: ((74, 31), (53, 64.113)),
+            1: ((32.53, 40.5),),
+            3: ((95, 66),),
+        },
+        "lowResFluor2BF": {
+            0: ((31, 22), (22, 20)),
+            1: ((63.1, 53.22),),
+            3: ((76, 42),),
+        },
     }
     viewer = QtImageStackViewer(data, points=existing_points)
 
