@@ -24,6 +24,7 @@ dependencies = [
     "paramiko",
     "pooch",
     "pillow",
+    "pyqt6",
     "pyyaml",
     "pandas",
     "tensorflow",
