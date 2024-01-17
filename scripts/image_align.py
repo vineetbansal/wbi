@@ -1,6 +1,7 @@
 from itertools import islice
 import sys
 import numpy as np
+import matplotlib.pyplot as plt
 from PyQt6.QtWidgets import QApplication
 from QtImageStackViewer import QtImageStackViewer
 from wbi.experiment import Experiment
@@ -23,9 +24,11 @@ def process_images(e):
         processed_images["image3"].append(lomag)
 
     for key, img in processed_images.items():
-        img_expanded = np.expand_dims(img, axis=-1)
-        img_expanded = np.repeat(img_expanded, 3, axis=-1).astype(np.uint8)
-        processed_images[key] = np.transpose(img_expanded, (1, 2, 3, 0))
+        normalized_image = img / np.max(img)
+        cm = plt.get_cmap("viridis")
+        colored_images = np.array([cm(frame)[:, :, :3] for frame in normalized_image])
+        colored_images_uint8 = (colored_images * 255).astype(np.uint8)
+        processed_images[key] = np.transpose(colored_images_uint8, (1, 2, 3, 0))
 
     return processed_images
 
