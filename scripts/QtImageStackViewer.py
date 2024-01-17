@@ -25,28 +25,30 @@ from QtImageViewer import QtImageViewer
 
 
 class QtImageStackViewer(QWidget):
-    def __init__(self, image, points=None):
+    def __init__(self, images, points=None):
         QWidget.__init__(self)
 
         self.setWindowTitle("Image Alignment")
 
-        assert (
-            image.ndim == 5 and image.shape[3] == 3
-        ), "image must be of shape (n_images, height, width, 3, n_frames)"
-        assert image.dtype == "uint8", "image must be of dtype uint8"
-        self.n_images, self.height, self.width, _, self.n_frames = image.shape
-        self._image = image
+        for name, image in images.items():
+            assert (
+                image.ndim == 4 and image.shape[2] == 3
+            ), "image must be of shape (height, width, 3, n_frames)"
+            assert image.dtype == "uint8", "image must be of dtype uint8"
+        self.n_images = len(images)
+        self.n_frames = min(image.shape[-1] for image in images.values())
+        self._images = images.copy()
 
         self._currentFrame = None
-        self.points = [defaultdict(list) for _ in range(self.n_images)]
+        self.points = {name: defaultdict(list) for name in self._images}
         if points is not None:
-            for i, point in enumerate(points):
+            for name, point in points.items():
                 for frame_number in range(self.n_frames):
-                    self.points[i][frame_number] = list(point.get(frame_number, ()))
+                    self.points[name][frame_number] = list(point.get(frame_number, ()))
 
-        self.imageViewers = [None] * self.n_images
-        for i in range(self.n_images):
-            imageViewer = QtImageViewer(index=i)
+        self.imageViewers = {}
+        for name in self._images:
+            imageViewer = QtImageViewer(name=name)
             imageViewer.setSizePolicy(
                 QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
             )
@@ -54,7 +56,7 @@ class QtImageStackViewer(QWidget):
             imageViewer.mousePositionOnImageChanged.connect(self.updateLabel)
             imageViewer.leftMouseButtonReleased.connect(self.addPoint)
             imageViewer.rightMouseButtonReleased.connect(self.removePoint)
-            self.imageViewers[i] = imageViewer
+            self.imageViewers[name] = imageViewer
 
         self._scrollbar = None
 
@@ -84,41 +86,34 @@ class QtImageStackViewer(QWidget):
         hbox.setSpacing(2)
 
         vbox.addLayout(hbox)
-        for imageViewer in self.imageViewers:
+        for imageViewer in self.imageViewers.values():
             hbox.addWidget(imageViewer)
         vbox.addWidget(self.toolbar)
 
         self.updateViewers()
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
-    def addPoint(self, i, x, y):
+    def addPoint(self, name, x, y):
         frame_number = self._scrollbar.value()
-        self.points[i][frame_number].append((x, y))
+        self.points[name][frame_number].append((x, y))
         self.updateFrames()
 
-    def removePoint(self, i, x, y):
+    def removePoint(self, name, x, y):
         frame_number = self._scrollbar.value()
 
         min_distance = 10
         closest_point = None
         closest_distance = np.inf
-        for existing_point in self.points[i][frame_number]:
+        for existing_point in self.points[name][frame_number]:
             distance = np.hypot(x - existing_point[0], y - existing_point[1])
             if distance < min(closest_distance, min_distance):
                 closest_distance = distance
                 closest_point = existing_point
 
         if closest_point is not None:
-            self.points[i][frame_number].remove(closest_point)
+            self.points[name][frame_number].remove(closest_point)
 
         self.updateFrames()
-
-    def image(self):
-        return self._image
-
-    def setImage(self, im):
-        self._image = im
-        self.updateViewers()
 
     def updateViewers(self):
         scrollbar = QScrollBar(Qt.Orientation.Horizontal)
@@ -127,7 +122,7 @@ class QtImageStackViewer(QWidget):
         )
         scrollbar.valueChanged.connect(self.updateFrames)
         self.layout().addWidget(scrollbar)
-        scrollbar.setRange(0, self._image.shape[-1] - 1)
+        scrollbar.setRange(0, self.n_frames - 1)
         scrollbar.setValue(0)
         self._scrollbar = scrollbar
 
@@ -135,27 +130,27 @@ class QtImageStackViewer(QWidget):
 
     def updateFrames(self):
         frame_number = self._scrollbar.value()
-        self._currentFrames = self._image[..., frame_number]
-        frames_data = self._currentFrames.copy()
-        for i, frame_data in enumerate(frames_data):
-            self.imageViewers[i].setImage(
-                frame_data, points=self.points[i][frame_number]
+        for name, image in self._images.items():
+            self.imageViewers[name].setImage(
+                image[..., frame_number], points=self.points[name][frame_number]
             )
 
         self.updateLabel()
 
-    def updateLabel(self, imagePixelPosition=None):
+    def updateLabel(self, name=None, imagePixelPosition=None):
         label = (
             str(self._scrollbar.value() + 1)
             + "/"
             + str(self._scrollbar.maximum() + 1)
             + "; "
         )
-        label += str(self.width) + "x" + str(self.height)
-        if imagePixelPosition is not None:
+        if name is not None and imagePixelPosition is not None:
             x = imagePixelPosition.x()
             y = imagePixelPosition.y()
-            if 0 <= x < self.width and 0 <= y < self.height:
+            if (
+                0 <= x < self._images[name].shape[1]
+                and 0 <= y < self._images[name].shape[0]
+            ):
                 label += "; x=" + str(x) + ", y=" + str(y)
                 if self._currentFrame is not None:
                     value = self._currentFrame[y, x]
@@ -184,14 +179,18 @@ class QtImageStackViewer(QWidget):
         """
         Make sure that for each frame, the number of points in each image is the same.
         """
-        for i in range(self.n_images):
-            for frame_number, points in self.points[i].items():
-                if len(points) != len(self.points[0][frame_number]):
+        first_image_name = list(self._images.keys())[0]
+        for name in self._images:
+            for frame_number, points in self.points[name].items():
+                if len(points) != len(self.points[first_image_name][frame_number]):
                     raise RuntimeError(
-                        f"Number of points in image {i+1} for frame {frame_number+1} is different from image 0."
+                        f"Number of points in image {name} for frame {frame_number+1} is different from image 0."
                     )
 
-        if len(self.points) == 0 or sum(len(v) for k, v in self.points[0].items()) < 8:
+        if (
+            len(self.points[first_image_name]) == 0
+            or sum(len(v) for k, v in self.points[first_image_name].items()) < 8
+        ):
             raise RuntimeError(
                 "Number of total selected points for each image is less than 8."
             )

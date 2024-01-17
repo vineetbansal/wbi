@@ -16,11 +16,11 @@ class QtImageViewer(QGraphicsView):
     # !!! These signals will NOT be emitted if the event is handled by an interaction such as zoom or pan.
     # !!! If aspect ratio prevents image from filling viewport, emitted position may be outside image bounds.
     leftMouseButtonPressed = pyqtSignal(float, float)
-    leftMouseButtonReleased = pyqtSignal(int, float, float)
+    leftMouseButtonReleased = pyqtSignal(str, float, float)
     middleMouseButtonPressed = pyqtSignal(float, float)
     middleMouseButtonReleased = pyqtSignal(float, float)
     rightMouseButtonPressed = pyqtSignal(float, float)
-    rightMouseButtonReleased = pyqtSignal(int, float, float)
+    rightMouseButtonReleased = pyqtSignal(str, float, float)
     leftMouseButtonDoubleClicked = pyqtSignal(float, float)
     rightMouseButtonDoubleClicked = pyqtSignal(float, float)
 
@@ -30,12 +30,12 @@ class QtImageViewer(QGraphicsView):
     # Emitted on mouse motion.
     # Emits mouse position over image in image pixel coordinates.
     # !!! setMouseTracking(True) if you want to use this at all times.
-    mousePositionOnImageChanged = pyqtSignal(QPoint)
+    mousePositionOnImageChanged = pyqtSignal(str, QPoint)
 
-    def __init__(self, index, parent=None):
+    def __init__(self, name, parent=None):
         QGraphicsView.__init__(self, parent)
 
-        self.index = index
+        self.name = name
 
         # Image is displayed as a QPixmap in a QGraphicsScene attached to this QGraphicsView.
         self.scene = QGraphicsScene()
@@ -316,11 +316,11 @@ class QtImageViewer(QGraphicsView):
 
         scenePos = self.mapToScene(event.pos())
         if event.button() == Qt.MouseButton.LeftButton:
-            self.leftMouseButtonReleased.emit(self.index, scenePos.x(), scenePos.y())
+            self.leftMouseButtonReleased.emit(self.name, scenePos.x(), scenePos.y())
         elif event.button() == Qt.MouseButton.MiddleButton:
             self.middleMouseButtonReleased.emit(scenePos.x(), scenePos.y())
         elif event.button() == Qt.MouseButton.RightButton:
-            self.rightMouseButtonReleased.emit(self.index, scenePos.x(), scenePos.y())
+            self.rightMouseButtonReleased.emit(self.name, scenePos.x(), scenePos.y())
 
         QGraphicsView.mouseReleaseEvent(self, event)
 
@@ -366,7 +366,7 @@ class QtImageViewer(QGraphicsView):
         else:
             # Invalid pixel position.
             imagePos = QPoint(-1, -1)
-        self.mousePositionOnImageChanged.emit(imagePos)
+        self.mousePositionOnImageChanged.emit(self.name, imagePos)
 
         QGraphicsView.mouseMoveEvent(self, event)
 
