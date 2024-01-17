@@ -1,7 +1,7 @@
 import argparse
 import logging
 from wbi.experiment import Experiment
-from scripts.image_align import image_align
+from wbi.ui.image_align import image_align
 
 logger = logging.getLogger(__name__)
 
