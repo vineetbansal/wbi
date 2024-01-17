@@ -1,37 +1,42 @@
+from itertools import islice
 import sys
 import numpy as np
 from PyQt6.QtWidgets import QApplication
 from QtImageStackViewer import QtImageStackViewer
-from PIL import Image, ImageSequence
+from wbi.experiment import Experiment
+
+
+def process_images(e):
+    himag_images = e.median_images_himag()
+    lomag_images = e.median_images_lomag()
+
+    min_count = min(
+        len(list(e.median_images_himag())), len(list(e.median_images_lomag()))
+    )
+    processed_images = {"image1": [], "image2": [], "image3": []}
+
+    for himag, lomag in zip(
+        islice(himag_images, min_count), islice(lomag_images, min_count)
+    ):
+        processed_images["image1"].append(himag[: himag.shape[0] // 2, :])
+        processed_images["image2"].append(himag[himag.shape[0] // 2 :, :])
+        processed_images["image3"].append(lomag)
+
+    for key, img in processed_images.items():
+        img_expanded = np.expand_dims(img, axis=-1)
+        img_expanded = np.repeat(img_expanded, 3, axis=-1).astype(np.uint8)
+        processed_images[key] = np.transpose(img_expanded, (1, 2, 3, 0))
+
+    return processed_images
 
 
 if __name__ == "__main__":
 
-    # -------- Sample input data -------- #
-    image = Image.open("sample_sequence.gif")
-    _array = np.array(
-        [np.array(frame.convert("RGB")) for frame in ImageSequence.Iterator(image)]
+    e = Experiment(
+        "/Users/aa9078/Documents/Projects/LeiferLab/Data/20231024_alignment_test/BrainScanner_20231018_143745/"
     )
 
-    data = {}
-    # Create 3 identical images from the data above, but with different colors
-    for i, name in enumerate(("image1", "image2", "image3")):
-        array = _array.copy()
-        all_except_i = [j for j in range(3) if j != i]
-        array[..., all_except_i] = 0
-        array = array.transpose((1, 2, 3, 0))
-
-        # clip second imag
-        if name == "image2":
-            array = array[:-100, :, :, :]
-
-        # shorten time steps for 3rd image
-        if name == "image3":
-            array = array[:, :, :, 5:-5]
-
-        data[name] = array
-
-    # -------- Sample input data -------- #
+    data = process_images(e)
 
     app = QApplication(sys.argv)
 
