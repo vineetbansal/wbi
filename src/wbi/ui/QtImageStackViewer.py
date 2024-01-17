@@ -21,7 +21,7 @@ from PyQt6.QtWidgets import (
     QLabel,
     QToolBar,
 )
-from QtImageViewer import QtImageViewer
+from wbi.ui.QtImageViewer import QtImageViewer
 
 
 class QtImageStackViewer(QWidget):
