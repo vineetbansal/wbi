@@ -3,8 +3,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from PyQt6.QtWidgets import QApplication
-from QtImageStackViewer import QtImageStackViewer
-from wbi.experiment import Experiment
+from wbi.ui.QtImageStackViewer import QtImageStackViewer
 
 
 def process_images(e):
@@ -33,13 +32,8 @@ def process_images(e):
     return processed_images
 
 
-if __name__ == "__main__":
-
-    e = Experiment(
-        "/Users/aa9078/Documents/Projects/LeiferLab/Data/20231024_alignment_test/BrainScanner_20231018_143745/"
-    )
-
-    data = process_images(e)
+def image_align(experiment):
+    data = process_images(experiment)
 
     app = QApplication(sys.argv)
 
