@@ -6,6 +6,11 @@ from QtImageStackViewer import QtImageStackViewer
 from wbi.experiment import Experiment
 
 
+def stack_image_groups(transformed_images, group_size=3):
+    n_stacks = transformed_images.shape[0] // group_size
+    return n_stacks
+
+
 def process_images(e, target_shape, n_frames):
     himag_images = e.median_images_himag()
     lomag_images = e.median_images_lomag()
@@ -34,7 +39,7 @@ def process_images(e, target_shape, n_frames):
             i, ..., channel_index, :
         ] = img_expanded  # Use 1 for green channel
 
-    return transformed_images[::17]
+    return transformed_images
 
 
 def resize_or_pad(image, target_shape):
@@ -64,7 +69,7 @@ def resize_or_pad(image, target_shape):
 def image_align(input_folder):
     e = Experiment(input_folder)
 
-    _data = process_images(e, (512, 512), 1)
+    _data = process_images(e, (512, 512), 3)
 
     app = QApplication(sys.argv)
 
