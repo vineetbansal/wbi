@@ -1,7 +1,8 @@
 from itertools import islice
 import sys
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+import os.path as path
 from PyQt6.QtWidgets import QApplication
 from wbi.ui.QtImageStackViewer import QtImageStackViewer
 
@@ -32,7 +33,8 @@ def process_images(e):
     return processed_images
 
 
-def image_align(experiment):
+def image_align(experiment, output_folder=None):
+    output_folder = output_folder or experiment.folder_path
     data = process_images(experiment)
 
     app = QApplication(sys.argv)
@@ -50,13 +52,16 @@ def image_align(experiment):
     viewer = QtImageStackViewer(data, points=existing_points)
 
     def get_points():
-        print("selected points:")
+        formatted_data = "Image, Frame, Coords\n"
         for name, point_dict in viewer.points.items():
-            print(f"image {name}:")
             for frame_number, points in point_dict.items():
-                print(f"  frame {frame_number}: {points}")
+                coords_str = "; ".join([f"({x}, {y})" for x, y in points])
+                formatted_data += f"{name}, {frame_number}, {coords_str}\n"
+        return formatted_data
 
     viewer.destroyed.connect(get_points)
 
+    with open(path.join(output_folder, "alignment_points.txt"), "w") as file:
+        file.write(get_points())
     viewer.show()
     sys.exit(app.exec())
