@@ -240,7 +240,7 @@ setappdata(handles.figure1,'alignments',alignments)
 display('select a camera background image for this size himag video');
 
 backgroundImage=uipickfiles('FilterSpec',backgroundLocation,...
-    'Prompt','Select Background HiMag Image File3');
+    'Prompt','Select Background HiMag Image File');
 
 if iscell(backgroundImage)
     backgroundImage=load(backgroundImage{1});
