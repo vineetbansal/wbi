@@ -63,9 +63,6 @@ class Timing(File):
         return row_min, row_max
 
     def merge_sync(self, sync):
-        if sync is None:
-            return None
-
         df = self.timing.join(sync.sync, how="left", lsuffix="_l", rsuffix="_r")
 
         # Interpolate NaN values
