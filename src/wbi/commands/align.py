@@ -1,6 +1,7 @@
 import argparse
 import logging
-from wbi.legacy.make_centerline import make_centerline
+from wbi.experiment import Experiment
+from wbi.ui.image_align import image_align
 
 logger = logging.getLogger(__name__)
 
@@ -13,10 +14,11 @@ def add_args(parser):
         help="Path to folder containing data files",
     )
     parser.add_argument(
-        "--max-frames", type=int, default=None, help="Max frames to process"
+        "--output_folder",
+        type=str,
+        default=None,
+        help="Path to the folder to save output files",
     )
-    parser.add_argument("--plot", action="store_true", help="Plot centerlines")
-
     return parser
 
 
@@ -24,11 +26,15 @@ def main(args):
     if not isinstance(args, argparse.Namespace):
         args = add_args(argparse.ArgumentParser()).parse_args(args)
 
-    make_centerline(
-        input_folder=args.input_folder,
-        max_frames=args.max_frames,
-        plot=args.plot,
+    input_folder, output_folder = (
+        args.input_folder,
+        args.output_folder,
     )
+
+    logger.info(f"Input: {input_folder} Output: {output_folder}")
+
+    experiment = Experiment(input_folder)
+    image_align(experiment, output_folder)
 
 
 if __name__ == "__main__":
