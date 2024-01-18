@@ -48,7 +48,7 @@ testpaths = ["tests"]
 norecursedirs = ["long_running_tests"]
 
 [tool.pyright]
-exclude = ["src/wbi/legacy", "matlab/", "build/"]
+exclude = ["src/wbi/ui", "src/wbi/legacy", "matlab/", "build/"]
 
 [project.optional-dependencies]
 dev = [
