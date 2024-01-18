@@ -16,19 +16,13 @@ def add_args(parser):
         "--max-frames", type=int, default=None, help="Max frames to process"
     )
     parser.add_argument("--plot", action="store_true", help="Plot centerlines")
-    parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Increase verbosity"
-    )
+
     return parser
 
 
 def main(args):
-
     if not isinstance(args, argparse.Namespace):
         args = add_args(argparse.ArgumentParser()).parse_args(args)
-
-    if args.verbose:
-        logger.setLevel(logging.DEBUG)
 
     make_centerline(
         input_folder=args.input_folder,
