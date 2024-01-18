@@ -1,5 +1,8 @@
 import argparse
+import logging
 from wbi.legacy.make_centerline import make_centerline
+
+logger = logging.getLogger(__name__)
 
 
 def add_args(parser):
@@ -17,11 +20,9 @@ def add_args(parser):
     return parser
 
 
-def main(args, logger):
+def main(args):
     if not isinstance(args, argparse.Namespace):
         args = add_args(argparse.ArgumentParser()).parse_args(args)
-
-    logger.debug("Input folder needs to have LowMagBrain20231024_153442")
 
     make_centerline(
         input_folder=args.input_folder,

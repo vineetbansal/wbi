@@ -1,5 +1,8 @@
 import argparse
+import logging
 from wbi.experiment import Experiment
+
+logger = logging.getLogger(__name__)
 
 
 def add_args(parser):
@@ -21,11 +24,9 @@ def add_args(parser):
     return parser
 
 
-def main(args, logger):
+def main(args):
     if not isinstance(args, argparse.Namespace):
         args = add_args(argparse.ArgumentParser()).parse_args(args)
-
-    logger.debug("Input folder needs to have sCMOS_Frames_U16_1024x512.dat")
 
     input_folder, output_folder, chunksize = (
         args.input_folder,

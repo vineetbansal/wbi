@@ -2,7 +2,7 @@ import logging
 from wbi.commands import remote
 from wbi.commands import flash_finder, centerline
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("wbi")
 
 
 def main():
@@ -37,7 +37,7 @@ def main():
     if args.verbose:
         logger.setLevel(logging.DEBUG)
 
-    args.func(args, logger)
+    args.func(args)
 
 
 if __name__ == "__main__":
