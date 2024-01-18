@@ -1,26 +1,17 @@
 import re
-import glob
 import os.path
 import logging
 import numpy as np
+from wbi.file import File
 
 logger = logging.getLogger(__name__)
 
 
-class Dat:
-    def __init__(self, file_or_folder_path):
-        if os.path.isdir(file_or_folder_path):
-            dat_files = glob.glob(
-                os.path.join(file_or_folder_path, "sCMOS_Frames_*.dat")
-            )
-            assert (
-                len(dat_files) == 1
-            ), "Unexpected number of sCMOS_Frames_*.dat files in folder"
-            dat_file = dat_files[0]
-        else:
-            dat_file = file_or_folder_path
+class Dat(File):
+    PATH = "sCMOS_Frames_*.dat"
 
-        self.dat_file = dat_file
+    def __init__(self, file_or_folder_path):
+        self.dat_file = self.path
         self._load_other_attributes()
 
     def _load_other_attributes(self):

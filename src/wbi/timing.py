@@ -1,17 +1,14 @@
-import os
 import numpy as np
 import pandas as pd
 from wbi import config
+from wbi.file import File
 
 
-class Timing:
+class Timing(File):
+    PATH = "framesDetails.txt"
+
     def __init__(self, file_or_folder_path):
-        if os.path.isdir(file_or_folder_path):
-            timing_file = os.path.join(file_or_folder_path, "framesDetails.txt")
-        else:
-            timing_file = file_or_folder_path
-
-        self.timing_file = timing_file
+        self.timing_file = self.path
         self._load_timing_file()
 
     def _load_timing_file(self):
@@ -103,15 +100,11 @@ class Timing:
         return df
 
 
-class LowMagTiming:
-    def __init__(self, file_or_folder_path):
-        if os.path.isdir(file_or_folder_path):
-            timing_file = os.path.join(file_or_folder_path, "CamData.txt")
-            assert os.path.exists(timing_file), f"{timing_file} not found"
-        else:
-            timing_file = file_or_folder_path
+class LowMagTiming(File):
+    PATH = "CamData.txt"
 
-        self.timing_file = timing_file
+    def __init__(self, file_or_folder_path):
+        self.timing_file = self.path
         self._load_timing_file()
 
     def __len__(self):
@@ -133,17 +126,12 @@ class LowMagTiming:
         self.timing = timing
 
 
-class FrameSynchronous:
+class FrameSynchronous(File):
+    PATH = "other-frameSynchronous.txt"
+
     def __init__(self, file_or_folder_path, latency_shift=0):
         self.latency_shift = latency_shift
-
-        if os.path.isdir(file_or_folder_path):
-            sync_file = os.path.join(file_or_folder_path, "other-frameSynchronous.txt")
-            assert os.path.exists(sync_file), f"{sync_file} not found"
-        else:
-            sync_file = file_or_folder_path
-
-        self.sync_file = sync_file
+        self.sync_file = self.path
         self._load_sync_file()
 
     def _load_sync_file(self):
