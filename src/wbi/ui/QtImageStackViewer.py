@@ -184,7 +184,7 @@ class QtImageStackViewer(QWidget):
             for frame_number, points in self.points[name].items():
                 if len(points) != len(self.points[first_image_name][frame_number]):
                     raise RuntimeError(
-                        f"Number of points in image {name} for frame {frame_number+1} is different from image 0."
+                        f"Number of points in image {name} for frame {frame_number+1} is different from {first_image_name}."
                     )
 
         if (

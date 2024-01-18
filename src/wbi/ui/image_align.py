@@ -70,4 +70,4 @@ def image_align(experiment, output_folder=None):
     with open(path.join(output_folder, "alignment_points.txt"), "w") as file:
         file.write(get_points())
     viewer.show()
-    sys.exit(app.exec())
+    app.exec()
