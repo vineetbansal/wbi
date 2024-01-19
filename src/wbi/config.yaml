@@ -5,18 +5,12 @@
    std_factor: 10
    # Smoothing window size for piezo positions
    piezo_smoothing_window_size: 4
+   # Factor to display progress
+   log_every: 10
 
  centerline:
-   #
+   # Factor to display progress
    log_every: 10
-   # Smoothing window size for piezo positions
-   piezo_smoothing_window_size: 4
-
- dat:
-     # Detected flashes have brightness these many stds above the average
-     std_factor: 10
-     # Smoothing window size for piezo positions
-     piezo_smoothing_window_size: 4
 
  # A key purely for testing purposes
  test:

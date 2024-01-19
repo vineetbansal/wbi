@@ -143,7 +143,7 @@ class Experiment:
                 chunk, axis=(0, 1)
             )
 
-            if index % config.centerline.log_every == 0:
+            if index % config.flash_finder.log_every == 0:
                 term_width, _ = shutil.get_terminal_size()
                 progress = (index + 1) / n_frames
                 bar_length = term_width - 20
