@@ -5,11 +5,11 @@
    std_factor: 10
    # Smoothing window size for piezo positions
    piezo_smoothing_window_size: 4
-   # Factor to display progress
+   # Factor to display progress in
    log_every: 10
 
  centerline:
-   # Factor to display progress
+   # Factor to display progress in
    log_every: 10
 
  # A key purely for testing purposes
