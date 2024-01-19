@@ -1,10 +1,9 @@
 import os.path
 import glob
-from typing import Optional
 
 
 class File:
-    path: Optional[str] = None
+    path: str = ""
 
     def __new__(cls, file_or_folder_path, *args, **kwargs):
         if path := getattr(cls, "PATH"):

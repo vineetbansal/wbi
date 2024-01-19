@@ -10,13 +10,11 @@ logger = logging.getLogger(__name__)
 class Dat(File):
     PATH = "sCMOS_Frames_*.dat"
 
-    def __init__(self, file_or_folder_path):
-        if self.path is not None:
-            self.dat_file = self.path
-            self._load_other_attributes()
+    def __init__(self, *args, **kwargs):
+        self._load_other_attributes()
 
     def _load_other_attributes(self):
-        dat_filename = os.path.basename(self.dat_file)
+        dat_filename = os.path.basename(self.path)
         match = re.match(r"sCMOS_Frames_(\w+)_(\d+)x(\d+).dat", dat_filename)
         assert match is not None
         dtype, rows, cols = match.groups()
@@ -29,7 +27,7 @@ class Dat(File):
         self.items_per_stride = self.rows * 2 * self.cols
         self.stride = self.items_per_stride * np.dtype(self.dtype).itemsize
 
-        size_in_bytes = os.stat(self.dat_file).st_size
+        size_in_bytes = os.stat(self.path).st_size
         self.n_frames = size_in_bytes // self.stride
 
     def load(self, count=1, offset=0):
@@ -39,7 +37,7 @@ class Dat(File):
                 f"Cannot supply {count} frames at offset {offset} when total frames = {self.n_frames}, Reducing to {count}"
             )
 
-        with open(self.dat_file, "rb") as f:
+        with open(self.path, "rb") as f:
             chunk = np.fromfile(
                 f,
                 dtype=self.dtype,
