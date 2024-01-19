@@ -11,8 +11,9 @@ class Dat(File):
     PATH = "sCMOS_Frames_*.dat"
 
     def __init__(self, file_or_folder_path):
-        self.dat_file = self.path
-        self._load_other_attributes()
+        if self.path is not None:
+            self.dat_file = self.path
+            self._load_other_attributes()
 
     def _load_other_attributes(self):
         dat_filename = os.path.basename(self.dat_file)

@@ -1,8 +1,11 @@
 import os.path
 import glob
+from typing import Optional
 
 
 class File:
+    path: Optional[str] = None
+
     def __new__(cls, file_or_folder_path, *args, **kwargs):
         if path := getattr(cls, "PATH"):
             files = glob.glob(os.path.join(file_or_folder_path, path))
