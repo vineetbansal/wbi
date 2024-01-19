@@ -6,7 +6,7 @@ import cv2
 import logging
 import matplotlib.pyplot as plt
 from scipy.io import savemat
-from tqdm import tqdm
+import shutil
 from wbi.timing import Timing, LowMagTiming, FrameSynchronous
 from wbi.dat import Dat
 from wbi import config
@@ -133,17 +133,25 @@ class Experiment:
         brightness = np.zeros(n_frames)
         stdev = np.zeros(n_frames)
 
-        with tqdm(total=n_frames) as pbar:
-            for index, chunk in enumerate(
-                dat.chunks(chunk_size=chunk_size, max_frames=n_frames)
-            ):
-                brightness[index * chunk_size : (index + 1) * chunk_size] = np.average(
-                    chunk, axis=(0, 1)
+        for index, chunk in enumerate(
+            dat.chunks(chunk_size=chunk_size, max_frames=n_frames)
+        ):
+            brightness[index * chunk_size : (index + 1) * chunk_size] = np.average(
+                chunk, axis=(0, 1)
+            )
+            stdev[index * chunk_size : (index + 1) * chunk_size] = np.std(
+                chunk, axis=(0, 1)
+            )
+
+            if index % config.centerline.log_every == 0:
+                term_width, _ = shutil.get_terminal_size()
+                progress = (index + 1) / n_frames
+                bar_length = term_width - 20
+                block = int(round(bar_length * progress))
+                text = "\rProgress: [{0}] {1}%".format(
+                    "#" * block + "-" * (bar_length - block), round(progress * 100, 2)
                 )
-                stdev[index * chunk_size : (index + 1) * chunk_size] = np.std(
-                    chunk, axis=(0, 1)
-                )
-                pbar.update(chunk_size)
+                logger.info(f"{text}")
 
         adjusted_brightness = brightness - np.average(brightness)
         stdev_brightness = np.std(adjusted_brightness)
