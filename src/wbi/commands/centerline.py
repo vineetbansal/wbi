@@ -24,6 +24,7 @@ def main(args):
     if not isinstance(args, argparse.Namespace):
         args = add_args(argparse.ArgumentParser()).parse_args(args)
 
+    logger.info(f"Input: {args.input_folder}")
     make_centerline(
         input_folder=args.input_folder,
         max_frames=args.max_frames,

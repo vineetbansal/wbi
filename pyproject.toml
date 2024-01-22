@@ -28,7 +28,6 @@ dependencies = [
     "pyyaml",
     "pandas",
     "tensorflow",
-    "tqdm"
 ]
 
 [project.scripts]
