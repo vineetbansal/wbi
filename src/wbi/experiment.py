@@ -20,7 +20,8 @@ class Experiment:
         self.dat = Dat(folder_path)
         self.timing = Timing(folder_path)
         self.frames_sync = FrameSynchronous(folder_path)
-        self.timing_dataframe = self.timing.merge_sync(self.frames_sync)
+        if self.frames_sync is not None:
+            self.timing_dataframe = self.timing.merge_sync(self.frames_sync)
 
         lowmag_folders = glob.glob(f"{folder_path}/LowMagBrain*/")
         if len(lowmag_folders) != 1:

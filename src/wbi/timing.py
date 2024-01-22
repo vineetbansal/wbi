@@ -1,21 +1,17 @@
-import os
 import numpy as np
 import pandas as pd
 from wbi import config
+from wbi.file import File
 
 
-class Timing:
-    def __init__(self, file_or_folder_path):
-        if os.path.isdir(file_or_folder_path):
-            timing_file = os.path.join(file_or_folder_path, "framesDetails.txt")
-        else:
-            timing_file = file_or_folder_path
+class Timing(File):
+    PATH = "framesDetails.txt"
 
-        self.timing_file = timing_file
+    def __init__(self, *args, **kwargs):
         self._load_timing_file()
 
     def _load_timing_file(self):
-        timing = pd.read_csv(self.timing_file, sep="\t")
+        timing = pd.read_csv(self.path, sep="\t")
         assert list(timing.columns) == [
             "Timestamp",
             "frameCount",
@@ -103,22 +99,17 @@ class Timing:
         return df
 
 
-class LowMagTiming:
-    def __init__(self, file_or_folder_path):
-        if os.path.isdir(file_or_folder_path):
-            timing_file = os.path.join(file_or_folder_path, "CamData.txt")
-            assert os.path.exists(timing_file), f"{timing_file} not found"
-        else:
-            timing_file = file_or_folder_path
+class LowMagTiming(File):
+    PATH = "CamData.txt"
 
-        self.timing_file = timing_file
+    def __init__(self, *args, **kwargs):
         self._load_timing_file()
 
     def __len__(self):
         return len(self.timing)
 
     def _load_timing_file(self):
-        timing = pd.read_csv(self.timing_file, sep="\t")
+        timing = pd.read_csv(self.path, sep="\t")
         assert list(timing.columns) == [
             "Total Frames",
             "Time",
@@ -133,21 +124,14 @@ class LowMagTiming:
         self.timing = timing
 
 
-class FrameSynchronous:
-    def __init__(self, file_or_folder_path, latency_shift=0):
-        self.latency_shift = latency_shift
+class FrameSynchronous(File):
+    PATH = "other-frameSynchronous.txt"
 
-        if os.path.isdir(file_or_folder_path):
-            sync_file = os.path.join(file_or_folder_path, "other-frameSynchronous.txt")
-            assert os.path.exists(sync_file), f"{sync_file} not found"
-        else:
-            sync_file = file_or_folder_path
-
-        self.sync_file = sync_file
+    def __init__(self, *args, **kwargs):
         self._load_sync_file()
 
     def _load_sync_file(self):
-        sync = pd.read_csv(self.sync_file, sep="\t", index_col=False)
+        sync = pd.read_csv(self.path, sep="\t", index_col=False)
         assert list(sync.columns) == [
             "Frame index",
             "Piezo position (V)",

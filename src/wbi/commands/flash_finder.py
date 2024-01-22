@@ -19,7 +19,11 @@ def add_args(parser):
         help="Path to the folder to save output files",
     )
     parser.add_argument(
-        "--chunksize", type=int, required=False, help="Approximate number of frames"
+        "--chunksize",
+        type=int,
+        required=False,
+        default=4000,
+        help="Approximate number of frames",
     )
     return parser
 
