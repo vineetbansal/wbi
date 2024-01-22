@@ -124,7 +124,7 @@ def clineFromVideo(path_cam, output_folder=None,plot=False, max_frames=None):
         if i % config.centerline.log_every == 0:
             term_width, _ = shutil.get_terminal_size()
             block = int(round((term_width - 20) * ((i + 1)/frame_count)))
-            text = "\rProgress: [{0}] {1}/{2}".format("#" * block + "-" * (term_width - 20 - block), (i+1), frame_count)
+            text = "\rProgress: [{0}] {1}% | {2}/{3}".format("#" * block + "-" * (term_width - 20 - block), round(((i + 1)/frame_count)*100), (i+1), frame_count)
             logger.info(f"{text}")
 
     cline_arr = np.moveaxis(np.array(cline_arr), 0,
