@@ -4,7 +4,6 @@
 import os
 import numpy as np
 import scipy.io as sio
-import tqdm
 
 
 def flash_finder(input_folder, output_folder=None, chunksize=4000, max_frames=None):
@@ -36,7 +35,7 @@ def flash_finder(input_folder, output_folder=None, chunksize=4000, max_frames=No
     stdev = np.zeros(nFrames)
 
     # Full iterations
-    for i in tqdm.tqdm(np.arange(nIterations)):
+    for i in np.arange(nIterations):
         chunk = np.fromfile(f, dtype=np.uint16, count=chunkMaxSize * 1024 * 512)
         frames = chunk.reshape((chunkMaxSize, 1024 * 512))
         brightness[i * chunkMaxSize:(i + 1) * chunkMaxSize] = np.average(frames,

@@ -3,8 +3,8 @@ requires = ["setuptools>=61.0", "setuptools_scm>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "wbi"
-version = "0.0.1"
+name = "leiferlab-wbi"
+dynamic = ["version"]
 authors = [
   { name="Vineet Bansal", email="vineetb@princeton.edu" },
   { name="Anushka Acharya", email="aa9078@princeton.edu" },
@@ -28,7 +28,6 @@ dependencies = [
     "pyyaml",
     "pandas",
     "tensorflow",
-    "tqdm"
 ]
 
 [project.scripts]

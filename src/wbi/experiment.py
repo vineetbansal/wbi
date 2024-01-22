@@ -6,7 +6,6 @@ import cv2
 import logging
 import matplotlib.pyplot as plt
 from scipy.io import savemat
-from tqdm import tqdm
 from wbi.timing import Timing, LowMagTiming, FrameSynchronous
 from wbi.dat import Dat
 from wbi import config
@@ -134,17 +133,18 @@ class Experiment:
         brightness = np.zeros(n_frames)
         stdev = np.zeros(n_frames)
 
-        with tqdm(total=n_frames) as pbar:
-            for index, chunk in enumerate(
-                dat.chunks(chunk_size=chunk_size, max_frames=n_frames)
-            ):
-                brightness[index * chunk_size : (index + 1) * chunk_size] = np.average(
-                    chunk, axis=(0, 1)
-                )
-                stdev[index * chunk_size : (index + 1) * chunk_size] = np.std(
-                    chunk, axis=(0, 1)
-                )
-                pbar.update(chunk_size)
+        for index, chunk in enumerate(
+            dat.chunks(chunk_size=chunk_size, max_frames=n_frames)
+        ):
+            brightness[index * chunk_size : (index + 1) * chunk_size] = np.average(
+                chunk, axis=(0, 1)
+            )
+            stdev[index * chunk_size : (index + 1) * chunk_size] = np.std(
+                chunk, axis=(0, 1)
+            )
+
+            progress = min((index + 1) * chunk_size, n_frames)
+            logger.info(f"Processed {progress}/{n_frames} frames")
 
         adjusted_brightness = brightness - np.average(brightness)
         stdev_brightness = np.std(adjusted_brightness)

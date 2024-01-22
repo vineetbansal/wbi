@@ -7,16 +7,19 @@ import glob
 import os
 import scipy.io as sio
 import cv2
+import logging
 import numpy as np
 import tensorflow as tf
-from tqdm import tqdm
 import matplotlib.pyplot as plt
+import shutil
 
 from wbi.legacy.cline.centerline_funcs import extract_centerline
 from wbi.legacy.cline.plot_cline import plot_centerline
 from wbi.matlab.imresize import imresize
 from wbi.data.ondemand import get_file
+from wbi import config
 
+logger = logging.getLogger(__name__)
 
 def find_worm_centered(center_line):
     numframes = center_line.shape[2]
@@ -69,7 +72,7 @@ def clineFromVideo(path_cam, output_folder=None,plot=False, max_frames=None):
 
     cline_arr = []
 
-    for i in tqdm(range(frame_count)):
+    for i in range(frame_count):
         ret, frame = cap.read()
 
         if not ret:
@@ -117,6 +120,10 @@ def clineFromVideo(path_cam, output_folder=None,plot=False, max_frames=None):
 
         cl = get_centerline(image)
         cline_arr.append(cl)
+
+        if (i + 1) % config.centerline.log_every == 0:
+            logger.info(f"Processed {i+1}/{frame_count} frames")
+
     cline_arr = np.moveaxis(np.array(cline_arr), 0,
                             2)  # (num_points, 2, num_frames)
 
