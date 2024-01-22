@@ -143,15 +143,13 @@ class Experiment:
                 chunk, axis=(0, 1)
             )
 
-            if index % config.flash_finder.log_every == 0:
-                term_width, _ = shutil.get_terminal_size()
-                progress = (index + 1) / n_frames
-                bar_length = term_width - 20
-                block = int(round(bar_length * progress))
-                text = "\rProgress: [{0}] {1}%".format(
-                    "#" * block + "-" * (bar_length - block), round(progress * 100, 2)
-                )
-                logger.info(f"{text}")
+            term_width, _ = shutil.get_terminal_size()
+            progress = (index * chunk_size) / n_frames
+            block = int(round((term_width - 20) * progress))
+            text = "\rProgress: [{0}] {1}%".format(
+                "#" * block + "-" * (term_width - 20 - block), round(progress * 100, 2)
+            )
+            logger.info(f"{text}")
 
         adjusted_brightness = brightness - np.average(brightness)
         stdev_brightness = np.std(adjusted_brightness)
