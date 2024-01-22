@@ -8,7 +8,7 @@
 
  centerline:
    # Factor to display progress in
-   log_every: 100
+   log_every: 1
 
  # A key purely for testing purposes
  test:
