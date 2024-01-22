@@ -6,7 +6,6 @@ import cv2
 import logging
 import matplotlib.pyplot as plt
 from scipy.io import savemat
-import shutil
 from wbi.timing import Timing, LowMagTiming, FrameSynchronous
 from wbi.dat import Dat
 from wbi import config
@@ -144,13 +143,8 @@ class Experiment:
                 chunk, axis=(0, 1)
             )
 
-            term_width, _ = shutil.get_terminal_size()
-            progress = (index * chunk_size) / n_frames
-            block = int(round((term_width - 20) * progress))
-            text = "\rProgress: [{0}] {1}%".format(
-                "#" * block + "-" * (term_width - 20 - block), round(progress * 100, 2)
-            )
-            logger.info(f"{text}")
+            progress = min((index + 1) * chunk_size, n_frames)
+            logger.info(f"Processed {progress}/{n_frames} frames")
 
         adjusted_brightness = brightness - np.average(brightness)
         stdev_brightness = np.std(adjusted_brightness)
