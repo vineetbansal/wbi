@@ -52,7 +52,7 @@ def process_coordinates(e):
                     # TODO: need to change 17 to have some dynamic value in this case
                 else:
                     existing_points[coords_map[val, dtype]] = {
-                        frame_no: alignment.alignments[val][dtype]
+                        frame_no: alignment.alignments[val][dtype][:2]
                         for frame_no in alignment.alignments[val][dtype][2]
                     }
                     # TODO: done under the assumption that frame_no is going to be the third column of matlab struct
