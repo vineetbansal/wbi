@@ -34,9 +34,9 @@ def process_coordinates(e):
         ("S2AHiRes", "Sall"): 0,
         ("S2AHiRes", "Aall"): 1,
         ("Hi2LowResF", "Sall"): 0,
-        ("Hi2LowResF", "Aall"): 3,
-        ("lowResFluor2BF", "Sall"): 4,  # TODO: We might not need this
-        ("lowResFluor2BF", "Aall"): 3,
+        ("Hi2LowResF", "Aall"): 2,
+        ("lowResFluor2BF", "Sall"): 3,  # TODO: We might not need this
+        ("lowResFluor2BF", "Aall"): 2,
     }
     dtypes = ("Aall", "Sall")
     existing_points = {"S2AHiRes": [], "Hi2LowResF": [], "lowResFluor2BF": []}
