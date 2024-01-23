@@ -44,7 +44,7 @@ def process_coordinates(e):
     for val in existing_points.keys():
         for dtype in dtypes:
             try:
-                if alignment.frames is None:
+                if alignment.frame_values is True:
                     existing_points[coords_map[val, dtype]] = {
                         frame_no: alignment.alignments[val][dtype]
                         for frame_no in range(17)

@@ -30,8 +30,7 @@ class Alignment(File):
             for label in dtypes["Hi2LowResF"]
         }
         self.background = alignments_data["background"][0, 0]
-        if len(list(self.lowResFluor2BF["Aall"])[0]) < 3:
-            self.frames = None
+        self.frame_values = len(list(self.lowResFluor2BF["Aall"])[0]) < 3
         self.alignments = {
             "lowResFluor2BF": self.lowResFluor2BF,
             "S2AHiRes": self.S2AHiRes,
