@@ -58,19 +58,15 @@ def image_align(experiment, output_folder=None):
     viewer = QtImageStackViewer(data, points=existing_points)
 
     def get_points():
-        from pprint import pprint
-
-        pprint(viewer.points)
         formatted_data = "Image, Frame, Coords\n"
         for name, point_dict in viewer.points.items():
             for frame_number, points in point_dict.items():
                 coords_str = "; ".join([f"({x}, {y})" for x, y in points])
                 formatted_data += f"{name}, {frame_number}, {coords_str}\n"
-        return formatted_data
+
+        with open(path.join(output_folder, "alignment_points.txt"), "w") as file:
+            file.write(formatted_data)
 
     viewer.destroyed.connect(get_points)
-
-    with open(path.join(output_folder, "alignment_points.txt"), "w") as file:
-        file.write(get_points())
     viewer.show()
     app.exec()
