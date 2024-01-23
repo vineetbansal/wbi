@@ -27,6 +27,28 @@ def process_images(e):
     return processed_images
 
 
+def process_coordinates(e):
+    alignment = e.alignment
+
+    coords_map = {
+        ("S2AHiRes", "Sall"): 0,
+        ("S2AHiRes", "Aall"): 1,
+        ("Hi2LowResF", "Sall"): 0,
+        ("Hi2LowResF", "Aall"): 3,
+        ("lowResFluor2BF", "Sall"): 4,  # TODO: We might not need this
+        ("lowResFluor2BF", "Aall"): 3,
+    }
+    dtypes = ("Aall", "Sall")
+    existing_points = {"S2AHiRes": [], "Hi2LowResF": [], "lowResFluor2BF": []}
+
+    for val in existing_points.keys():
+        existing_points[val] = {
+            coords_map[val, dtype]: alignment.alignments[val][dtype] for dtype in dtypes
+        }
+
+    return existing_points
+
+
 def image_align(experiment, output_folder=None):
     output_folder = output_folder or experiment.folder_path
     data = process_images(experiment)
@@ -38,23 +60,7 @@ def image_align(experiment, output_folder=None):
     #   image name => point_dict
     # where point_dict is a mapping from frame number (0-indexed)
     # to list of points
-    existing_points = {
-        "S2AHiRes": {
-            0: ((20, 25), (36.32, 40.11)),
-            1: ((100.52, 80.5),),
-            3: ((85, 92),),
-        },
-        "Hi2LowResF": {
-            0: ((74, 31), (53, 64.113)),
-            1: ((32.53, 40.5),),
-            3: ((95, 66),),
-        },
-        "lowResFluor2BF": {
-            0: ((31, 22), (22, 20)),
-            1: ((63.1, 53.22),),
-            3: ((76, 42),),
-        },
-    }
+    existing_points = process_coordinates(experiment)
     viewer = QtImageStackViewer(data, points=existing_points)
 
     def get_points():
