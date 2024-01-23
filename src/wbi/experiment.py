@@ -6,6 +6,7 @@ import cv2
 import logging
 import matplotlib.pyplot as plt
 from scipy.io import savemat
+from wbi.alignment import Alignment
 from wbi.timing import Timing, LowMagTiming, FrameSynchronous
 from wbi.dat import Dat
 from wbi import config
@@ -16,6 +17,7 @@ logger = logging.getLogger(__name__)
 class Experiment:
     def __init__(self, folder_path):
         self.folder_path = folder_path
+        self.alignment = Alignment(folder_path)
         self.dat = Dat(folder_path)
         self.timing = Timing(folder_path)
         self.frames_sync = FrameSynchronous(folder_path)
