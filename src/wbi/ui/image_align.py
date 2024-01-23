@@ -31,20 +31,33 @@ def process_coordinates(e):
     alignment = e.alignment
 
     coords_map = {
-        ("S2AHiRes", "Sall"): 0,
-        ("S2AHiRes", "Aall"): 1,
-        ("Hi2LowResF", "Sall"): 0,
-        ("Hi2LowResF", "Aall"): 2,
-        ("lowResFluor2BF", "Sall"): 3,  # TODO: We might not need this
-        ("lowResFluor2BF", "Aall"): 2,
+        ("S2AHiRes", "Sall"): "S2AHiRes",
+        ("S2AHiRes", "Aall"): "Hi2LowResF",
+        ("Hi2LowResF", "Sall"): "S2AHiRes",
+        ("Hi2LowResF", "Aall"): "lowResFluor2BF",
+        # ("lowResFluor2BF", "Sall"): 3,  # TODO: Keeping it commented for now
+        ("lowResFluor2BF", "Aall"): "lowResFluor2BF",
     }
     dtypes = ("Aall", "Sall")
     existing_points = {"S2AHiRes": [], "Hi2LowResF": [], "lowResFluor2BF": []}
 
     for val in existing_points.keys():
-        existing_points[val] = {
-            coords_map[val, dtype]: alignment.alignments[val][dtype] for dtype in dtypes
-        }
+        for dtype in dtypes:
+            try:
+                if alignment.frames is None:
+                    existing_points[coords_map[val, dtype]] = {
+                        frame_no: alignment.alignments[val][dtype]
+                        for frame_no in range(17)
+                    }
+                    # TODO: need to change 17 to have some dynamic value in this case
+                else:
+                    existing_points[coords_map[val, dtype]] = {
+                        frame_no: alignment.alignments[val][dtype]
+                        for frame_no in alignment.alignments[val][dtype][2]
+                    }
+                    # TODO: done under the assumption that frame_no is going to be the third column of matlab struct
+            except KeyError:
+                pass
 
     return existing_points
 
