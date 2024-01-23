@@ -42,22 +42,25 @@ def image_align(experiment, output_folder=None):
         "S2AHiRes": {
             0: ((20, 25), (36.32, 40.11)),
             1: ((100.52, 80.5),),
-            3: ((85, 92),),
+            None: ((85, 92),),
         },
         "Hi2LowResF": {
             0: ((74, 31), (53, 64.113)),
             1: ((32.53, 40.5),),
-            3: ((95, 66),),
+            None: ((95, 66),),
         },
         "lowResFluor2BF": {
             0: ((31, 22), (22, 20)),
             1: ((63.1, 53.22),),
-            3: ((76, 42),),
+            2: ((76, 42),),
         },
     }
     viewer = QtImageStackViewer(data, points=existing_points)
 
     def get_points():
+        from pprint import pprint
+
+        pprint(viewer.points)
         formatted_data = "Image, Frame, Coords\n"
         for name, point_dict in viewer.points.items():
             for frame_number, points in point_dict.items():

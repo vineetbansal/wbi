@@ -43,6 +43,8 @@ class QtImageStackViewer(QWidget):
         self.points = {name: defaultdict(list) for name in self._images}
         if points is not None:
             for name, point in points.items():
+                # points that apply to all frames of this image
+                self.points[name][None] = list(point.get(None, []))
                 for frame_number in range(self.n_frames):
                     self.points[name][frame_number] = list(point.get(frame_number, ()))
 
@@ -103,15 +105,19 @@ class QtImageStackViewer(QWidget):
 
         min_distance = 10
         closest_point = None
+        closest_point_key = None
         closest_distance = np.inf
-        for existing_point in self.points[name][frame_number]:
-            distance = np.hypot(x - existing_point[0], y - existing_point[1])
-            if distance < min(closest_distance, min_distance):
-                closest_distance = distance
-                closest_point = existing_point
+
+        for which in (None, frame_number):
+            for existing_point in self.points[name][which]:
+                distance = np.hypot(x - existing_point[0], y - existing_point[1])
+                if distance < min(closest_distance, min_distance):
+                    closest_distance = distance
+                    closest_point = existing_point
+                    closest_point_key = which
 
         if closest_point is not None:
-            self.points[name][frame_number].remove(closest_point)
+            self.points[name][closest_point_key].remove(closest_point)
 
         self.updateFrames()
 
@@ -131,8 +137,10 @@ class QtImageStackViewer(QWidget):
     def updateFrames(self):
         frame_number = self._scrollbar.value()
         for name, image in self._images.items():
+            all_frame_points = self.points[name][None]
+            this_frame_points = self.points[name][frame_number]
             self.imageViewers[name].setImage(
-                image[..., frame_number], points=self.points[name][frame_number]
+                image[..., frame_number], points=all_frame_points + this_frame_points
             )
 
         self.updateLabel()
@@ -144,6 +152,15 @@ class QtImageStackViewer(QWidget):
             + str(self._scrollbar.maximum() + 1)
             + "; "
         )
+
+        label += "("
+        n_points = []
+        for _name in self._images:
+            _n_points = sum([len(v) for v in self.points[_name].values()])
+            n_points.append(_n_points)
+        label += "/".join(map(str, n_points))
+        label += ")"
+
         if name is not None and imagePixelPosition is not None:
             x = imagePixelPosition.x()
             y = imagePixelPosition.y()
@@ -180,12 +197,16 @@ class QtImageStackViewer(QWidget):
         Make sure that for each frame, the number of points in each image is the same.
         """
         first_image_name = list(self._images.keys())[0]
+        first_image_n_points = sum(
+            len(v) for v in self.points[first_image_name].values()
+        )
+
         for name in self._images:
-            for frame_number, points in self.points[name].items():
-                if len(points) != len(self.points[first_image_name][frame_number]):
-                    raise RuntimeError(
-                        f"Number of points in image {name} for frame {frame_number+1} is different from {first_image_name}."
-                    )
+            this_image_n_points = sum(len(v) for v in self.points[name].values())
+            if first_image_n_points != this_image_n_points:
+                raise RuntimeError(
+                    f"Number of points in image {name} is different from {first_image_name}."
+                )
 
         if (
             len(self.points[first_image_name]) == 0
