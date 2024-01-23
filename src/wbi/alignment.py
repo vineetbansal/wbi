@@ -8,6 +8,9 @@ class Alignment(File):
     def __init__(self, *args, **kwargs):
         self._load_mat_file()
 
+    def __getitem__(self, item):
+        return self.alignments[item]
+
     def _load_mat_file(self):
         alignments_data = sio.loadmat(self.path)["alignments"]
         dtypes = {
@@ -27,3 +30,9 @@ class Alignment(File):
             for label in dtypes["Hi2LowResF"]
         }
         self.background = alignments_data["background"][0, 0]
+        self.alignments = {
+            "lowResFluor2BF": self.lowResFluor2BF,
+            "S2AHiRes": self.S2AHiRes,
+            "Hi2LowResF": self.Hi2LowResF,
+            "background": self.background,
+        }
