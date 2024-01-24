@@ -48,10 +48,10 @@ def process_coordinates(e, n_frames):
                 continue
             if not a.has_frame_values:
                 existing_points[coords_map[img_key, channel]] = {
-                    None: a.coordinates[img_key][channel]
+                    None: a.data[img_key][channel]
                 }
             else:
-                for coords in a.coordinates[img_key][channel][:n_frames]:
+                for coords in a.data[img_key][channel][:n_frames]:
                     if (frame_no := coords[2].astype(int)) not in (
                         points_map := existing_points[coords_map[img_key, channel]]
                     ):
@@ -76,29 +76,29 @@ def image_align(experiment, output_folder=None):
     #   image name => point_dict
     # where point_dict is a mapping from frame number (0-indexed)
     # to list of points
-    if experiment.alignment.load_mat_file:
-        existing_points = process_coordinates(
-            experiment, n_frames=data[next(iter(data))].shape[-1]
-        )
-    else:
-        existing_points = {
-            "S2AHiRes": {
-                0: ((20, 25), (36.32, 40.11)),
-                1: ((100.52, 80.5),),
-                None: ((85, 92),),
-            },
-            "Hi2LowResF": {
-                0: ((74, 31), (53, 64.113)),
-                1: ((32.53, 40.5),),
-                None: ((95, 66),),
-            },
-            "lowResFluor2BF": {
-                0: ((31, 22), (22, 20)),
-                1: ((63.1, 53.22),),
-                2: ((76, 42),),
-            },
-        }
 
+    existing_points = process_coordinates(
+        experiment, n_frames=data[next(iter(data))].shape[-1]
+    )
+
+    # Format of `points` argument:
+    # existing_points = {
+    #     "S2AHiRes": {
+    #         0: ((20, 25), (36.32, 40.11)),
+    #         1: ((100.52, 80.5),),
+    #         None: ((85, 92),),
+    #     },
+    #     "Hi2LowResF": {
+    #         0: ((74, 31), (53, 64.113)),
+    #         1: ((32.53, 40.5),),
+    #         None: ((95, 66),),
+    #     },
+    #     "lowResFluor2BF": {
+    #         0: ((31, 22), (22, 20)),
+    #         1: ((63.1, 53.22),),
+    #         2: ((76, 42),),
+    #     },
+    # }
     viewer = QtImageStackViewer(data, points=existing_points)
 
     def get_points():

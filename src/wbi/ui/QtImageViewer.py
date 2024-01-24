@@ -131,12 +131,12 @@ class QtImageViewer(QGraphicsView):
             ellipse = QGraphicsEllipseItem(0, 0, 1, 1)
             ellipse.setPos(point_x, point_y)
             pen = QPen(Qt.GlobalColor.green)
-            pen.setWidth(1)
+            pen.setWidth(2)
             ellipse.setPen(pen)
             self.scene.addItem(ellipse)
             label = QGraphicsTextItem(str(i))
             label.setPos(point_x, point_y)
-            label.setFont(QFont("Courier New", 5))
+            label.setFont(QFont("Courier New", 10))
             self.scene.addItem(label)
 
         self.setSceneRect(QRectF(pixmap.rect()))  # Set scene size to image size.
