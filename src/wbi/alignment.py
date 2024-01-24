@@ -6,7 +6,9 @@ class Alignment(File):
     PATH = "alignments.mat"
 
     def __init__(self, *args, **kwargs):
-        self._load_mat_file()
+        self.load_mat_file = False
+        if self.load_mat_file:
+            self._load_mat_file()
 
     def __getitem__(self, item):
         return self.coordinates[item]
