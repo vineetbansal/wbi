@@ -9,31 +9,27 @@ class Alignment(File):
         self._load_mat_file()
 
     def __getitem__(self, item):
-        return self.alignments[item]
+        return self.coordinates[item]
 
     def _load_mat_file(self):
         alignments_data = sio.loadmat(self.path)["alignments"]
-        dtypes = {
+        image_channels = {
             names: alignments_data[names][0, 0].dtype.names
             for names in alignments_data.dtype.names
         }
-        self.lowResFluor2BF = {
-            label: alignments_data["lowResFluor2BF"][0, 0][label][0, 0]
-            for label in dtypes["lowResFluor2BF"]
+        self.coordinates = {
+            "lowResFluor2BF": {
+                channel: alignments_data["lowResFluor2BF"][0, 0][channel][0, 0]
+                for channel in image_channels["lowResFluor2BF"]
+            },
+            "S2AHiRes": {
+                channel: alignments_data["S2AHiRes"][0, 0][channel][0, 0]
+                for channel in image_channels["S2AHiRes"]
+            },
+            "Hi2LowResF": {
+                channel: alignments_data["Hi2LowResF"][0, 0][channel][0, 0]
+                for channel in image_channels["Hi2LowResF"]
+            },
+            "background": alignments_data["background"][0, 0],
         }
-        self.S2AHiRes = {
-            label: alignments_data["S2AHiRes"][0, 0][label][0, 0]
-            for label in dtypes["S2AHiRes"]
-        }
-        self.Hi2LowResF = {
-            label: alignments_data["Hi2LowResF"][0, 0][label][0, 0]
-            for label in dtypes["Hi2LowResF"]
-        }
-        self.background = alignments_data["background"][0, 0]
-        self.frame_values = len(list(self.lowResFluor2BF["Aall"])[0]) < 3
-        self.alignments = {
-            "lowResFluor2BF": self.lowResFluor2BF,
-            "S2AHiRes": self.S2AHiRes,
-            "Hi2LowResF": self.Hi2LowResF,
-            "background": self.background,
-        }
+        self.has_frame_values = "Aall2" in self.alignments["lowResFluor2BF"]
