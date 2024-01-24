@@ -74,7 +74,26 @@ def image_align(experiment, output_folder=None):
     #   image name => point_dict
     # where point_dict is a mapping from frame number (0-indexed)
     # to list of points
-    existing_points = process_coordinates(experiment)
+
+    # existing_points = process_coordinates(experiment)
+
+    existing_points = {
+        "S2AHiRes": {
+            0: ((20, 25), (36.32, 40.11)),
+            1: ((100.52, 80.5),),
+            None: ((85, 92),),
+        },
+        "Hi2LowResF": {
+            0: ((74, 31), (53, 64.113)),
+            1: ((32.53, 40.5),),
+            None: ((95, 66),),
+        },
+        "lowResFluor2BF": {
+            0: ((31, 22), (22, 20)),
+            1: ((63.1, 53.22),),
+            2: ((76, 42),),
+        },
+    }
     viewer = QtImageStackViewer(data, points=existing_points)
 
     def get_points():
@@ -83,11 +102,10 @@ def image_align(experiment, output_folder=None):
             for frame_number, points in point_dict.items():
                 coords_str = "; ".join([f"({x}, {y})" for x, y in points])
                 formatted_data += f"{name}, {frame_number}, {coords_str}\n"
-        return formatted_data
+
+        with open(path.join(output_folder, "alignment_points.txt"), "w") as file:
+            file.write(formatted_data)
 
     viewer.destroyed.connect(get_points)
-
-    with open(path.join(output_folder, "alignment_points.txt"), "w") as file:
-        file.write(get_points())
     viewer.show()
     app.exec()
