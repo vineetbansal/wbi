@@ -6,7 +6,8 @@ class Alignment(File):
     PATH = "alignments.mat"
 
     def __init__(self, *args, **kwargs):
-        self.load_mat_file = False
+        # TODO: This needs to be updated after the initialization of alignment class
+        self.load_mat_file = args[1] if len(args) > 1 else False
         if self.load_mat_file:
             self._load_mat_file()
 
