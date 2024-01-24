@@ -27,35 +27,51 @@ def process_images(e):
     return processed_images
 
 
-def process_coordinates(e):
+def process_coordinates(e, n_frames):
     alignment = e.alignment
 
-    coords_map = {
-        ("S2AHiRes", "Sall"): "S2AHiRes",
-        ("S2AHiRes", "Aall"): "Hi2LowResF",
-        ("Hi2LowResF", "Sall"): "S2AHiRes",
-        ("Hi2LowResF", "Aall"): "lowResFluor2BF",
-        # ("lowResFluor2BF", "Sall"): None,  # TODO: Keeping it commented for now
-        ("lowResFluor2BF", "Aall"): "lowResFluor2BF",
-    }
-    point_channel = ("Aall", "Sall")
-    existing_points = {"S2AHiRes": [], "Hi2LowResF": [], "lowResFluor2BF": []}
+    coords_map = (
+        {
+            ("S2AHiRes", "Sall"): "S2AHiRes",
+            ("S2AHiRes", "Aall"): "Hi2LowResF",
+            ("Hi2LowResF", "Sall"): "S2AHiRes",
+            ("Hi2LowResF", "Aall"): "lowResFluor2BF",
+            # ("lowResFluor2BF", "Sall"): None,  # TODO: Keeping it commented for now
+            ("lowResFluor2BF", "Aall"): "lowResFluor2BF",
+        }
+        if not alignment.has_frame_values
+        else {
+            ("S2AHiRes", "Sall2"): "S2AHiRes",
+            ("S2AHiRes", "Aall2"): "Hi2LowResF",
+            ("Hi2LowResF", "Sall2"): "S2AHiRes",
+            ("Hi2LowResF", "Aall2"): "lowResFluor2BF",
+            # ("lowResFluor2BF", "Sall2"): None,  # TODO: Keeping it commented for now
+            ("lowResFluor2BF", "Aall2"): "lowResFluor2BF",
+        }
+    )
+    point_channel = (
+        ("Aall", "Sall") if not alignment.has_frame_values else ("Aall2", "Sall2")
+    )
+    existing_points = {"S2AHiRes": {}, "Hi2LowResF": {}, "lowResFluor2BF": {}}
 
-    for point in list(existing_points):
+    for img_key in list(existing_points):
         for channel in point_channel:
             try:
                 if not alignment.has_frame_values:
-                    existing_points[coords_map[point, channel]] = {
-                        frame_no: alignment.coordinates[point][channel]
-                        for frame_no in range(17)
+                    existing_points[coords_map[img_key, channel]] = {
+                        None: alignment.coordinates[img_key][channel]
                     }
-                    # TODO: need to change 17 to have some dynamic value in this case
                 else:
-                    existing_points[coords_map[point, channel]] = {
-                        frame_no: alignment.alignments[point][channel][:2]
-                        for frame_no in alignment.coordinates[point][channel][2]
-                    }
-                    # TODO: done under the assumption that frame_no is going to be the third column of matlab struct
+                    for coords in alignment.coordinates[img_key][channel][:n_frames]:
+                        if (frame_no := coords[2].astype(int)) not in (
+                            points_map := existing_points[coords_map[img_key, channel]]
+                        ):
+                            points_map[frame_no] = []
+
+                        point = np.ndarray.tolist(coords[:2])
+
+                        if not (point in points_map[frame_no]):
+                            points_map[frame_no].append(point)
             except KeyError:
                 pass
             # TODO: Better to get rid of it, if not comment something to make it clear why this is here
@@ -74,26 +90,9 @@ def image_align(experiment, output_folder=None):
     #   image name => point_dict
     # where point_dict is a mapping from frame number (0-indexed)
     # to list of points
-
-    # existing_points = process_coordinates(experiment)
-
-    existing_points = {
-        "S2AHiRes": {
-            0: ((20, 25), (36.32, 40.11)),
-            1: ((100.52, 80.5),),
-            None: ((85, 92),),
-        },
-        "Hi2LowResF": {
-            0: ((74, 31), (53, 64.113)),
-            1: ((32.53, 40.5),),
-            None: ((95, 66),),
-        },
-        "lowResFluor2BF": {
-            0: ((31, 22), (22, 20)),
-            1: ((63.1, 53.22),),
-            2: ((76, 42),),
-        },
-    }
+    existing_points = process_coordinates(
+        experiment, n_frames=data[next(iter(data))].shape[-1]
+    )
     viewer = QtImageStackViewer(data, points=existing_points)
 
     def get_points():
