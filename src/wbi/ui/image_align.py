@@ -35,29 +35,30 @@ def process_coordinates(e):
         ("S2AHiRes", "Aall"): "Hi2LowResF",
         ("Hi2LowResF", "Sall"): "S2AHiRes",
         ("Hi2LowResF", "Aall"): "lowResFluor2BF",
-        # ("lowResFluor2BF", "Sall"): 3,  # TODO: Keeping it commented for now
+        # ("lowResFluor2BF", "Sall"): None,  # TODO: Keeping it commented for now
         ("lowResFluor2BF", "Aall"): "lowResFluor2BF",
     }
-    dtypes = ("Aall", "Sall")
+    point_channel = ("Aall", "Sall")
     existing_points = {"S2AHiRes": [], "Hi2LowResF": [], "lowResFluor2BF": []}
 
-    for val in existing_points.keys():
-        for dtype in dtypes:
+    for point in list(existing_points):
+        for channel in point_channel:
             try:
-                if alignment.frame_values is True:
-                    existing_points[coords_map[val, dtype]] = {
-                        frame_no: alignment.alignments[val][dtype]
+                if not alignment.has_frame_values:
+                    existing_points[coords_map[point, channel]] = {
+                        frame_no: alignment.coordinates[point][channel]
                         for frame_no in range(17)
                     }
                     # TODO: need to change 17 to have some dynamic value in this case
                 else:
-                    existing_points[coords_map[val, dtype]] = {
-                        frame_no: alignment.alignments[val][dtype][:2]
-                        for frame_no in alignment.alignments[val][dtype][2]
+                    existing_points[coords_map[point, channel]] = {
+                        frame_no: alignment.alignments[point][channel][:2]
+                        for frame_no in alignment.coordinates[point][channel][2]
                     }
                     # TODO: done under the assumption that frame_no is going to be the third column of matlab struct
             except KeyError:
                 pass
+            # TODO: Better to get rid of it, if not comment something to make it clear why this is here
 
     return existing_points
 

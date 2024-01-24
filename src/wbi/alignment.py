@@ -32,4 +32,4 @@ class Alignment(File):
             },
             "background": alignments_data["background"][0, 0],
         }
-        self.has_frame_values = "Aall2" in self.alignments["lowResFluor2BF"]
+        self.has_frame_values = "Aall2" in self.coordinates["lowResFluor2BF"]
