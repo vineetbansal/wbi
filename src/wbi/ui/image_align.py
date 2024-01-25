@@ -1,7 +1,9 @@
+from collections import defaultdict
 import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import os.path as path
+import scipy.io as sio
 from PyQt6.QtWidgets import QApplication
 from wbi.ui.QtImageStackViewer import QtImageStackViewer
 
@@ -30,39 +32,65 @@ def process_images(e):
 def process_coordinates(e, n_frames):
     a = e.alignment
 
-    point_channel = ("Aall", "Sall") if not a.has_frame_values else ("Aall2", "Sall2")
-    existing_points = {"S2AHiRes": {}, "Hi2LowResF": {}, "lowResFluor2BF": {}}
+    channels = ("Aall", "Sall") if not a.has_frame_values else ("Aall2", "Sall2")
+    points_mapping = {"S2AHiRes": {}, "Hi2LowResF": {}, "lowResFluor2BF": {}}
 
-    coords_map = {
-        ("S2AHiRes", point_channel[1]): "S2AHiRes",
-        ("S2AHiRes", point_channel[0]): "Hi2LowResF",
-        ("Hi2LowResF", point_channel[1]): "S2AHiRes",
-        ("Hi2LowResF", point_channel[0]): "lowResFluor2BF",
-        ("lowResFluor2BF", point_channel[0]): "lowResFluor2BF",
+    channel_map = {
+        ("S2AHiRes", channels[1]): "S2AHiRes",
+        ("S2AHiRes", channels[0]): "Hi2LowResF",
+        ("Hi2LowResF", channels[1]): "S2AHiRes",
+        ("Hi2LowResF", channels[0]): "lowResFluor2BF",
+        ("lowResFluor2BF", channels[0]): "lowResFluor2BF",
     }
 
-    for img_key in list(existing_points):
-        for channel in point_channel:
-            if img_key == "lowResFluor2BF" and channel == point_channel[1]:
+    for img_key in list(points_mapping):
+        for channel in channels:
+            if img_key == "lowResFluor2BF" and channel == channels[1]:
                 # This would map to the fourth image channel that is no longer in existence
                 continue
+
+            target_key = channel_map.get((img_key, channel))
+            points_mapping[target_key] = defaultdict(list)
+            data_points = a.data[img_key][channel]
+
             if not a.has_frame_values:
-                existing_points[coords_map[img_key, channel]] = {
-                    None: a.data[img_key][channel]
-                }
+                points_mapping[target_key][None] = data_points
             else:
-                for coords in a.data[img_key][channel][:n_frames]:
-                    if (frame_no := coords[2].astype(int)) not in (
-                        points_map := existing_points[coords_map[img_key, channel]]
-                    ):
-                        points_map[frame_no] = []
+                for coords in data_points[:n_frames]:
+                    frame_no = coords[2].astype(int)
+                    point = np.ndarray.tolist(coords[:2])
+                    if point not in points_mapping[target_key][frame_no]:
+                        points_mapping[target_key][frame_no].append(point)
 
-                    if not (
-                        (point := np.ndarray.tolist(coords[:2])) in points_map[frame_no]
-                    ):
-                        points_map[frame_no].append(point)
+    return points_mapping
 
-    return existing_points
+
+def save_mat_file(raw_data, output_folder, save_frame_value=False):
+    point_channel = ("Aall", "Sall") if not save_frame_value else ("Aall2", "Sall2")
+    formatted_data = {"S2AHiRes": {}, "Hi2LowResF": {}, "lowResFluor2BF": {}}
+    reverse_coords_map = {
+        "S2AHiRes": [("S2AHiRes", point_channel[1]), ("Hi2LowResF", point_channel[1])],
+        "Hi2LowResF": [("S2AHiRes", point_channel[0])],
+        "lowResFluor2BF": [
+            ("Hi2LowResF", point_channel[0]),
+            ("lowResFluor2BF", point_channel[0]),
+        ],
+    }
+
+    for name, point_dict in raw_data:
+        for img_name, inner_name in reverse_coords_map[name]:
+            formatted_data[img_name][inner_name] = []
+            for frame_number, points in point_dict.items():
+                if len(points) != 0:
+                    if not save_frame_value:
+                        formatted_data[img_name][inner_name] = points
+                    else:
+                        for y in np.array([[x[0], x[1], frame_number] for x in points]):
+                            formatted_data[img_name][inner_name].append(y)
+
+    matlab_dict = {"alignments": formatted_data}
+    file_name = path.join(output_folder, "alignments.mat")
+    sio.savemat(file_name, matlab_dict)
 
 
 def image_align(experiment, output_folder=None):
@@ -102,14 +130,7 @@ def image_align(experiment, output_folder=None):
     viewer = QtImageStackViewer(data, points=existing_points)
 
     def get_points():
-        formatted_data = "Image, Frame, Coords\n"
-        for name, point_dict in viewer.points.items():
-            for frame_number, points in point_dict.items():
-                coords_str = "; ".join([f"({x}, {y})" for x, y in points])
-                formatted_data += f"{name}, {frame_number}, {coords_str}\n"
-
-        with open(path.join(output_folder, "alignment_points.txt"), "w") as file:
-            file.write(formatted_data)
+        save_mat_file(viewer.points.items(), output_folder, save_frame_value=False)
 
     viewer.destroyed.connect(get_points)
     viewer.show()
