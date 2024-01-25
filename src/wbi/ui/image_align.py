@@ -68,9 +68,15 @@ def process_coordinates(e, n_frames):
     return points_mapping
 
 
-def save_mat_file(raw_data, output_folder, save_frame_value=False):
+def save_mat_file(raw_data, output_folder, background_file, save_frame_value=False):
+    background = sio.loadmat(background_file)["backgroundImage"]
     channels = ("Aall", "Sall") if not save_frame_value else ("Aall2", "Sall2")
-    point_mapping = {"S2AHiRes": {}, "Hi2LowResF": {}, "lowResFluor2BF": {}}
+    point_mapping = {
+        "S2AHiRes": {},
+        "Hi2LowResF": {},
+        "lowResFluor2BF": {},
+        "background": background,
+    }
     reverse_coords_map = {
         "S2AHiRes": [("S2AHiRes", channels[1]), ("Hi2LowResF", channels[1])],
         "Hi2LowResF": [("S2AHiRes", channels[0])],
@@ -97,7 +103,9 @@ def save_mat_file(raw_data, output_folder, save_frame_value=False):
     sio.savemat(file_name, matlab_dict)
 
 
-def image_align(experiment, output_folder=None, save_frame_values=False):
+def image_align(
+    experiment, output_folder=None, background_file=None, save_frame_values=False
+):
     output_folder = output_folder or experiment.folder_path
     data = process_images(experiment)
 
@@ -134,7 +142,9 @@ def image_align(experiment, output_folder=None, save_frame_values=False):
     viewer = QtImageStackViewer(data, points=existing_points)
 
     def get_points():
-        save_mat_file(viewer.points.items(), output_folder, save_frame_values)
+        save_mat_file(
+            viewer.points.items(), output_folder, background_file, save_frame_values
+        )
 
     viewer.destroyed.connect(get_points)
     viewer.show()
