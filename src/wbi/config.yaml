@@ -7,8 +7,12 @@
    piezo_smoothing_window_size: 4
 
  centerline:
-   # Factor to display progress in
-   log_every: 1
+  # Factor to display progress in
+  log_every: 1
+
+ alignment:
+  #Location where the background file is located in
+  background_file: "/3dbrain/background1024x512.mat"
 
  # A key purely for testing purposes
  test:
