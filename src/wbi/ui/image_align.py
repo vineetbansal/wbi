@@ -55,10 +55,13 @@ def process_coordinates(e, n_frames):
             if not a.has_frame_values:
                 points_mapping[target_key][None] = data_points
             else:
-                for coords in data_points[:n_frames]:
+                for coords in data_points:
                     frame_no = coords[2].astype(int)
                     point = np.ndarray.tolist(coords[:2])
-                    if point not in points_mapping[target_key][frame_no]:
+                    if (
+                        frame_no < n_frames
+                        and point not in points_mapping[target_key][frame_no]
+                    ):
                         points_mapping[target_key][frame_no].append(point)
 
     return points_mapping
