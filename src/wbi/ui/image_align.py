@@ -1,4 +1,5 @@
 import sys
+from collections import defaultdict
 import matplotlib.pyplot as plt
 import numpy as np
 import os.path as path
@@ -30,39 +31,37 @@ def process_images(e):
 def process_coordinates(e, n_frames):
     a = e.alignment
 
-    point_channel = ("Aall", "Sall") if not a.has_frame_values else ("Aall2", "Sall2")
-    existing_points = {"S2AHiRes": {}, "Hi2LowResF": {}, "lowResFluor2BF": {}}
+    channels = ("Aall", "Sall") if not a.has_frame_values else ("Aall2", "Sall2")
+    points_mapping = {"S2AHiRes": {}, "Hi2LowResF": {}, "lowResFluor2BF": {}}
 
-    coords_map = {
-        ("S2AHiRes", point_channel[1]): "S2AHiRes",
-        ("S2AHiRes", point_channel[0]): "Hi2LowResF",
-        ("Hi2LowResF", point_channel[1]): "S2AHiRes",
-        ("Hi2LowResF", point_channel[0]): "lowResFluor2BF",
-        ("lowResFluor2BF", point_channel[0]): "lowResFluor2BF",
+    channel_map = {
+        ("S2AHiRes", channels[1]): "S2AHiRes",
+        ("S2AHiRes", channels[0]): "Hi2LowResF",
+        ("Hi2LowResF", channels[1]): "S2AHiRes",
+        ("Hi2LowResF", channels[0]): "lowResFluor2BF",
+        ("lowResFluor2BF", channels[0]): "lowResFluor2BF",
     }
 
-    for img_key in list(existing_points):
-        for channel in point_channel:
-            if img_key == "lowResFluor2BF" and channel == point_channel[1]:
+    for img_key in list(points_mapping):
+        for channel in channels:
+            if img_key == "lowResFluor2BF" and channel == channels[1]:
                 # This would map to the fourth image channel that is no longer in existence
                 continue
+
+            target_key = channel_map.get((img_key, channel))
+            points_mapping[target_key] = defaultdict(list)
+            data_points = a.data[img_key][channel]
+
             if not a.has_frame_values:
-                existing_points[coords_map[img_key, channel]] = {
-                    None: a.data[img_key][channel]
-                }
+                points_mapping[target_key][None] = data_points
             else:
-                for coords in a.data[img_key][channel][:n_frames]:
-                    if (frame_no := coords[2].astype(int)) not in (
-                        points_map := existing_points[coords_map[img_key, channel]]
-                    ):
-                        points_map[frame_no] = []
+                for coords in data_points[:n_frames]:
+                    frame_no = coords[2].astype(int)
+                    point = np.ndarray.tolist(coords[:2])
+                    if point not in points_mapping[target_key][frame_no]:
+                        points_mapping[target_key][frame_no].append(point)
 
-                    if not (
-                        (point := np.ndarray.tolist(coords[:2])) in points_map[frame_no]
-                    ):
-                        points_map[frame_no].append(point)
-
-    return existing_points
+    return points_mapping
 
 
 def image_align(experiment, output_folder=None):
