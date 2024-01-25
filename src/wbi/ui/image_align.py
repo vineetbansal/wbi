@@ -94,7 +94,7 @@ def save_mat_file(raw_data, output_folder, save_frame_value=False):
     sio.savemat(file_name, matlab_dict)
 
 
-def image_align(experiment, output_folder=None):
+def image_align(experiment, output_folder=None, save_frame_values=False):
     output_folder = output_folder or experiment.folder_path
     data = process_images(experiment)
 
@@ -131,7 +131,7 @@ def image_align(experiment, output_folder=None):
     viewer = QtImageStackViewer(data, points=existing_points)
 
     def get_points():
-        save_mat_file(viewer.points.items(), output_folder, save_frame_value=False)
+        save_mat_file(viewer.points.items(), output_folder, save_frame_values)
 
     viewer.destroyed.connect(get_points)
     viewer.show()
