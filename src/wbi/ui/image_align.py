@@ -1,5 +1,4 @@
 import sys
-from collections import defaultdict
 import matplotlib.pyplot as plt
 import numpy as np
 import os.path as path
@@ -29,42 +28,19 @@ def process_images(e):
 
 
 def process_coordinates(e, n_frames):
-    a = e.alignment
+    alignment = e.alignment
 
-    channels = ("Aall", "Sall") if not a.has_frame_values else ("Aall2", "Sall2")
-    points_mapping = {"S2AHiRes": {}, "Hi2LowResF": {}, "lowResFluor2BF": {}}
-
-    channel_map = {
-        ("S2AHiRes", channels[1]): "S2AHiRes",
-        ("S2AHiRes", channels[0]): "Hi2LowResF",
-        ("Hi2LowResF", channels[1]): "S2AHiRes",
-        ("Hi2LowResF", channels[0]): "lowResFluor2BF",
-        ("lowResFluor2BF", channels[0]): "lowResFluor2BF",
-    }
-
-    for img_key in list(points_mapping):
-        for channel in channels:
-            if img_key == "lowResFluor2BF" and channel == channels[1]:
-                # This would map to the fourth image channel that is no longer in existence
-                continue
-
-            target_key = channel_map.get((img_key, channel))
-            points_mapping[target_key] = defaultdict(list)
-            data_points = a.data[img_key][channel]
-
-            if not a.has_frame_values:
-                points_mapping[target_key][None] = data_points
-            else:
-                for coords in data_points:
-                    frame_no = coords[2].astype(int)
-                    point = np.ndarray.tolist(coords[:2])
-                    if (
-                        frame_no < n_frames
-                        and point not in points_mapping[target_key][frame_no]
-                    ):
-                        points_mapping[target_key][frame_no].append(point)
-
-    return points_mapping
+    # Mapping from image names to:
+    #   frame_number => points that we want to pre-populate the viewer with.
+    #   `None` for frame_number means that the points apply to all frames.
+    if alignment.has_frame_values:
+        raise NotImplementedError
+    else:
+        return {
+            "S2AHiRes": {None: alignment["S2AHiRes"]["Sall"]},
+            "Hi2LowResF": {None: alignment["S2AHiRes"]["Aall"]},
+            "lowResFluor2BF": {None: alignment["Hi2LowResF"]["Aall"]},
+        }
 
 
 def image_align(experiment, output_folder=None):
@@ -79,9 +55,8 @@ def image_align(experiment, output_folder=None):
     # where point_dict is a mapping from frame number (0-indexed)
     # to list of points
 
-    existing_points = process_coordinates(
-        experiment, n_frames=data[next(iter(data))].shape[-1]
-    )
+    n_frames = list(data.values())[0].shape[-1]
+    existing_points = process_coordinates(experiment, n_frames=n_frames)
 
     # Format of `points` argument:
     # existing_points = {
