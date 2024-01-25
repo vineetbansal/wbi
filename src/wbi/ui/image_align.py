@@ -27,6 +27,22 @@ def process_images(e):
     return processed_images
 
 
+def process_coordinates(e, n_frames):
+    alignment = e.alignment
+
+    # Mapping from image names to:
+    #   frame_number => points that we want to pre-populate the viewer with.
+    #   `None` for frame_number means that the points apply to all frames.
+    if alignment.has_frame_values:
+        raise NotImplementedError
+    else:
+        return {
+            "S2AHiRes": {None: alignment["S2AHiRes"]["Sall"]},
+            "Hi2LowResF": {None: alignment["S2AHiRes"]["Aall"]},
+            "lowResFluor2BF": {None: alignment["Hi2LowResF"]["Aall"]},
+        }
+
+
 def image_align(experiment, output_folder=None):
     output_folder = output_folder or experiment.folder_path
     data = process_images(experiment)
@@ -38,23 +54,28 @@ def image_align(experiment, output_folder=None):
     #   image name => point_dict
     # where point_dict is a mapping from frame number (0-indexed)
     # to list of points
-    existing_points = {
-        "S2AHiRes": {
-            0: ((20, 25), (36.32, 40.11)),
-            1: ((100.52, 80.5),),
-            None: ((85, 92),),
-        },
-        "Hi2LowResF": {
-            0: ((74, 31), (53, 64.113)),
-            1: ((32.53, 40.5),),
-            None: ((95, 66),),
-        },
-        "lowResFluor2BF": {
-            0: ((31, 22), (22, 20)),
-            1: ((63.1, 53.22),),
-            2: ((76, 42),),
-        },
-    }
+
+    n_frames = list(data.values())[0].shape[-1]
+    existing_points = process_coordinates(experiment, n_frames=n_frames)
+
+    # Format of `points` argument:
+    # existing_points = {
+    #     "S2AHiRes": {
+    #         0: ((20, 25), (36.32, 40.11)),
+    #         1: ((100.52, 80.5),),
+    #         None: ((85, 92),),
+    #     },
+    #     "Hi2LowResF": {
+    #         0: ((74, 31), (53, 64.113)),
+    #         1: ((32.53, 40.5),),
+    #         None: ((95, 66),),
+    #     },
+    #     "lowResFluor2BF": {
+    #         0: ((31, 22), (22, 20)),
+    #         1: ((63.1, 53.22),),
+    #         2: ((76, 42),),
+    #     },
+    # }
     viewer = QtImageStackViewer(data, points=existing_points)
 
     def get_points():
