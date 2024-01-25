@@ -83,7 +83,8 @@ def save_mat_file(raw_data, output_folder, save_frame_value=False):
             for frame_number, points in point_dict.items():
                 if len(points) != 0:
                     if not save_frame_value:
-                        formatted_data[img_name][inner_name] = points
+                        for y in points:
+                            formatted_data[img_name][inner_name].append(y)
                     else:
                         for y in np.array([[x[0], x[1], frame_number] for x in points]):
                             formatted_data[img_name][inner_name].append(y)
