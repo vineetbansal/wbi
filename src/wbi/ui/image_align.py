@@ -66,30 +66,30 @@ def process_coordinates(e, n_frames):
 
 
 def save_mat_file(raw_data, output_folder, save_frame_value=False):
-    point_channel = ("Aall", "Sall") if not save_frame_value else ("Aall2", "Sall2")
-    formatted_data = {"S2AHiRes": {}, "Hi2LowResF": {}, "lowResFluor2BF": {}}
+    channels = ("Aall", "Sall") if not save_frame_value else ("Aall2", "Sall2")
+    point_mapping = {"S2AHiRes": {}, "Hi2LowResF": {}, "lowResFluor2BF": {}}
     reverse_coords_map = {
-        "S2AHiRes": [("S2AHiRes", point_channel[1]), ("Hi2LowResF", point_channel[1])],
-        "Hi2LowResF": [("S2AHiRes", point_channel[0])],
+        "S2AHiRes": [("S2AHiRes", channels[1]), ("Hi2LowResF", channels[1])],
+        "Hi2LowResF": [("S2AHiRes", channels[0])],
         "lowResFluor2BF": [
-            ("Hi2LowResF", point_channel[0]),
-            ("lowResFluor2BF", point_channel[0]),
+            ("Hi2LowResF", channels[0]),
+            ("lowResFluor2BF", channels[0]),
         ],
     }
 
     for name, point_dict in raw_data:
         for img_name, inner_name in reverse_coords_map[name]:
-            formatted_data[img_name][inner_name] = []
+            point_mapping[img_name][inner_name] = []
             for frame_number, points in point_dict.items():
                 if len(points) != 0:
                     if not save_frame_value:
                         for y in points:
-                            formatted_data[img_name][inner_name].append(y)
+                            point_mapping[img_name][inner_name].append(y)
                     else:
                         for y in np.array([[x[0], x[1], frame_number] for x in points]):
-                            formatted_data[img_name][inner_name].append(y)
+                            point_mapping[img_name][inner_name].append(y)
 
-    matlab_dict = {"alignments": formatted_data}
+    matlab_dict = {"alignments": point_mapping}
     file_name = path.join(output_folder, "alignments.mat")
     sio.savemat(file_name, matlab_dict)
 
