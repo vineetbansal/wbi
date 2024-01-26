@@ -7,8 +7,12 @@
    piezo_smoothing_window_size: 4
 
  centerline:
-   # Factor to display progress in
-   log_every: 1
+  # Factor to display progress in
+  log_every: 1
+
+ alignment:
+  # Location of the background mat file
+  background_file:
 
  # A key purely for testing purposes
  test:
