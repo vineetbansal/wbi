@@ -11,8 +11,8 @@
   log_every: 1
 
  alignment:
-  #Location where the background file is located in
-  background_file: "/3dbrain/Background/background1024x512.mat"
+  # Location of the background mat file
+  background_file:
 
  # A key purely for testing purposes
  test:
