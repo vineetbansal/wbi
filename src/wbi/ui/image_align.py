@@ -1,4 +1,6 @@
 import sys
+from collections import defaultdict
+
 import matplotlib.pyplot as plt
 import numpy as np
 import os.path as path
@@ -46,34 +48,30 @@ def process_coordinates(e, n_frames):
 
 def save_mat_file(raw_data, output_folder, background_file, save_frame_value=False):
     background = sio.loadmat(background_file)["backgroundImage"]
-    channels = ("Aall", "Sall") if not save_frame_value else ("Aall2", "Sall2")
-    point_mapping = {
-        "S2AHiRes": {},
-        "Hi2LowResF": {},
-        "lowResFluor2BF": {},
-        "background": background,
-    }
+
+    point_mapping = defaultdict(lambda: defaultdict(list))
     reverse_coords_map = {
-        "S2AHiRes": [("S2AHiRes", channels[1]), ("Hi2LowResF", channels[1])],
-        "Hi2LowResF": [("S2AHiRes", channels[0])],
-        "lowResFluor2BF": [
-            ("Hi2LowResF", channels[0]),
-            ("lowResFluor2BF", channels[0]),
-        ],
+        "S2AHiRes": [("S2AHiRes", "Sall"), ("Hi2LowResF", "Sall")],
+        "Hi2LowResF": [("S2AHiRes", "Aall")],
+        "lowResFluor2BF": [("Hi2LowResF", "Aall"), ("lowResFluor2BF", "Aall")],
     }
+
+    for img_name in reverse_coords_map:
+        point_mapping[img_name].setdefault("Aall", [])
+        point_mapping[img_name].setdefault("Sall", [])
+        point_mapping[img_name].setdefault("t_concord", [])
+        point_mapping[img_name].setdefault("Rsegment", [])
 
     for name, point_dict in raw_data:
         for img_name, inner_name in reverse_coords_map[name]:
-            point_mapping[img_name][inner_name] = []
             for frame_number, points in point_dict.items():
-                if len(points) != 0:
+                if points:
                     if not save_frame_value:
-                        for y in points:
-                            point_mapping[img_name][inner_name].append(y)
+                        point_mapping[img_name][inner_name].extend(points)
                     else:
-                        for y in np.array([[x[0], x[1], frame_number] for x in points]):
-                            point_mapping[img_name][inner_name].append(y)
+                        raise NotImplementedError
 
+    point_mapping["background"] = background
     matlab_dict = {"alignments": point_mapping}
     file_name = path.join(output_folder, "alignments.mat")
     sio.savemat(file_name, matlab_dict)
