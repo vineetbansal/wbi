@@ -46,30 +46,48 @@ def process_coordinates(e, n_frames):
         }
 
 
-def save_mat_file(raw_data, output_folder, background_file, save_frame_value=False):
-    background = sio.loadmat(background_file)["backgroundImage"]
+def save_mat_file(
+    raw_data, output_folder, background_file=None, save_frame_value=False
+):
+    if background_file is not None:
+        background = sio.loadmat(background_file)["backgroundImage"]
+    else:
+        background = np.uint8(0)
 
     point_mapping = defaultdict(lambda: defaultdict(list))
-    reverse_coords_map = {
+    # Mapping from image name we get from the UI to matlab structure names
+    # (nested).
+    image_name_to_matlab_names = {
         "S2AHiRes": [("S2AHiRes", "Sall"), ("Hi2LowResF", "Sall")],
         "Hi2LowResF": [("S2AHiRes", "Aall")],
-        "lowResFluor2BF": [("Hi2LowResF", "Aall"), ("lowResFluor2BF", "Aall")],
+        "lowResFluor2BF": [
+            ("Hi2LowResF", "Aall"),
+            ("lowResFluor2BF", "Aall"),
+            ("lowResFluor2BF", "Sall"),
+        ],
     }
 
-    for img_name in reverse_coords_map:
+    # All fields for each of the 3 matlab structure names above;
+    # We do not populate t_concord/Rsegment.
+    for img_name in image_name_to_matlab_names:
         point_mapping[img_name].setdefault("Aall", [])
         point_mapping[img_name].setdefault("Sall", [])
         point_mapping[img_name].setdefault("t_concord", [])
         point_mapping[img_name].setdefault("Rsegment", [])
 
+    if save_frame_value:
+        raise NotImplementedError
+
     for name, point_dict in raw_data:
-        for img_name, inner_name in reverse_coords_map[name]:
+        for img_name, inner_name in image_name_to_matlab_names[name]:
             for frame_number, points in point_dict.items():
                 if points:
-                    if not save_frame_value:
-                        point_mapping[img_name][inner_name].extend(points)
-                    else:
-                        raise NotImplementedError
+                    point_mapping[img_name][inner_name].extend(points)
+
+    # TODO: Current matlab code is saving S2AHiRes.rect1/S2AHiRes.rect2
+    # with hardcoded values. We do the same to conform to legacy format.
+    point_mapping["S2AHiRes"]["rect1"] = np.array([1, 1, 512, 512]).astype(np.uint16)
+    point_mapping["S2AHiRes"]["rect2"] = np.array([1, 513, 512, 512]).astype(np.uint16)
 
     point_mapping["background"] = background
     matlab_dict = {"alignments": point_mapping}
@@ -114,11 +132,11 @@ def image_align(
     # }
     viewer = QtImageStackViewer(data, points=existing_points)
 
-    def get_points():
+    def on_destroy():
         save_mat_file(
             viewer.points.items(), output_folder, background_file, save_frame_values
         )
 
-    viewer.destroyed.connect(get_points)
+    viewer.destroyed.connect(on_destroy)
     viewer.show()
     app.exec()
