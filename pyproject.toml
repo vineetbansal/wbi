@@ -27,6 +27,7 @@ dependencies = [
     "pyqt5",
     "pyyaml",
     "pandas",
+    "scikit-image",
     "tensorflow",
 ]
 
