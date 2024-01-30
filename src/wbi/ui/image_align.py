@@ -132,11 +132,12 @@ def image_align(
     # }
     viewer = QtImageStackViewer(data, points=existing_points)
 
-    def on_destroy():
-        save_mat_file(
-            viewer.points.items(), output_folder, background_file, save_frame_values
-        )
+    def on_close(save):
+        if save:
+            save_mat_file(
+                viewer.points.items(), output_folder, background_file, save_frame_values
+            )
 
-    viewer.destroyed.connect(on_destroy)
+    viewer.closed.connect(on_close)
     viewer.show()
     app.exec()
