@@ -86,6 +86,7 @@ class QtImageViewer(QGraphicsView):
 
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
+        self.image_height = self.image_width = None  # set on setImage()
         self.points = []
 
     def sizeHint(self):
@@ -114,6 +115,7 @@ class QtImageViewer(QGraphicsView):
         image = image.astype(np.uint8)
         height, width, channels = image.shape
         assert channels == 3
+        self.height, self.width = height, width
         bytes = image.tobytes()
         qimage = QImage(bytes, width, height, QImage.Format.Format_RGB888)
         pixmap = QPixmap.fromImage(qimage)
@@ -159,6 +161,17 @@ class QtImageViewer(QGraphicsView):
             self.updateViewer()
             self.viewChanged.emit()
 
+    def zoomIn(self, zoomRect):
+        self.zoomStack.append(zoomRect)
+        self.updateViewer()
+        self.viewChanged.emit()
+
+    def zoomOut(self):
+        if len(self.zoomStack):
+            self.zoomStack.pop()
+            self.updateViewer()
+            self.viewChanged.emit()
+
     def resizeEvent(self, event):
         """Maintain current zoom on resize."""
         self.updateViewer()
@@ -189,11 +202,7 @@ class QtImageViewer(QGraphicsView):
             return
 
         if (self.zoomOutButton is not None) and (event.button() == self.zoomOutButton):
-            if len(self.zoomStack):
-                self.zoomStack.pop()
-                self.updateViewer()
-                self.viewChanged.emit()
-            event.accept()
+            event.ignore()
             return
 
         # Start dragging to pan?
@@ -270,9 +279,7 @@ class QtImageViewer(QGraphicsView):
             zoomPixelHeight = abs(event.pos().y() - self._pixelPosition.y())
             if zoomPixelWidth > 3 and zoomPixelHeight > 3:
                 if zoomRect.isValid() and (zoomRect != self.sceneRect()):
-                    self.zoomStack.append(zoomRect)
-                    self.updateViewer()
-                    self.viewChanged.emit()
+                    self.zoomIn(zoomRect)
                     event.accept()
                     self._isZooming = False
                     return
