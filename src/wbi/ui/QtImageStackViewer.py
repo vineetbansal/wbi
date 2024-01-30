@@ -10,7 +10,7 @@ point annotation and multiple images.
 
 from collections import defaultdict
 import numpy as np
-from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtCore import Qt, QSize, QRectF, pyqtSignal
 from PyQt6.QtWidgets import (
     QWidget,
     QHBoxLayout,
@@ -25,6 +25,10 @@ from wbi.ui.QtImageViewer import QtImageViewer
 
 
 class QtImageStackViewer(QWidget):
+
+    # True: save, False: don't save
+    closed = pyqtSignal(bool)
+
     def __init__(self, images, points=None):
         QWidget.__init__(self)
 
@@ -44,9 +48,11 @@ class QtImageStackViewer(QWidget):
         if points is not None:
             for name, point in points.items():
                 # points that apply to all frames of this image
-                self.points[name][None] = list(point.get(None, []))
+                self.points[name][None] = np.array(point.get(None, [])).tolist()
                 for frame_number in range(self.n_frames):
-                    self.points[name][frame_number] = list(point.get(frame_number, ()))
+                    self.points[name][frame_number] = np.array(
+                        point.get(frame_number, [])
+                    ).tolist()
 
         self.imageViewers = {}
         for name in self._images:
@@ -59,8 +65,6 @@ class QtImageStackViewer(QWidget):
             imageViewer.leftMouseButtonReleased.connect(self.addPoint)
             imageViewer.rightMouseButtonReleased.connect(self.removePoint)
             self.imageViewers[name] = imageViewer
-
-        self._scrollbar = None
 
         self.label = QLabel()
         font = self.label.font()
@@ -92,8 +96,21 @@ class QtImageStackViewer(QWidget):
             hbox.addWidget(imageViewer)
         vbox.addWidget(self.toolbar)
 
-        self.updateViewers()
+        scrollbar = QScrollBar(Qt.Orientation.Horizontal)
+        scrollbar.setSizePolicy(
+            QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        )
+        scrollbar.valueChanged.connect(self.updateFrames)
+        self.layout().addWidget(scrollbar)
+        scrollbar.setRange(0, self.n_frames - 1)
+        scrollbar.setValue(0)
+        self._scrollbar = scrollbar
+
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.updateFrames(initial=True)
+
+    def __len__(self):
+        return len(self._images)
 
     def addPoint(self, name, x, y):
         frame_number = self._scrollbar.value()
@@ -118,47 +135,48 @@ class QtImageStackViewer(QWidget):
 
         if closest_point is not None:
             self.points[name][closest_point_key].remove(closest_point)
+            self.updateFrames()
+        else:
+            self.imageViewers[name].zoomOut()
 
-        self.updateFrames()
-
-    def updateViewers(self):
-        scrollbar = QScrollBar(Qt.Orientation.Horizontal)
-        scrollbar.setSizePolicy(
-            QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        )
-        scrollbar.valueChanged.connect(self.updateFrames)
-        self.layout().addWidget(scrollbar)
-        scrollbar.setRange(0, self.n_frames - 1)
-        scrollbar.setValue(0)
-        self._scrollbar = scrollbar
-
-        self.updateFrames()
-
-    def updateFrames(self):
+    def updateFrames(self, initial=False):
         frame_number = self._scrollbar.value()
-        for name, image in self._images.items():
+        for i, (name, image) in enumerate(self._images.items()):
             all_frame_points = self.points[name][None]
             this_frame_points = self.points[name][frame_number]
             self.imageViewers[name].setImage(
                 image[..., frame_number], points=all_frame_points + this_frame_points
             )
 
+            # The last image is zoomed to a 512x512 region centered on the image
+            # TODO: Very hacky! Find a better long term solution to this!
+            if initial and i == len(self) - 1:
+                image_viewer = self.imageViewers[name]
+                image_viewer.zoomIn(
+                    QRectF(
+                        (image_viewer.width - 512) // 2,
+                        (image_viewer.height - 512) // 2,
+                        512,
+                        512,
+                    )
+                )
+
         self.updateLabel()
 
     def updateLabel(self, name=None, imagePixelPosition=None):
         label = (
-            str(self._scrollbar.value() + 1)
+            "Frame "
+            + str(self._scrollbar.value() + 1)
             + "/"
             + str(self._scrollbar.maximum() + 1)
             + "; "
         )
 
-        label += "("
-        n_points = []
+        label += " Points ("
         for _name in self._images:
             _n_points = sum([len(v) for v in self.points[_name].values()])
-            n_points.append(_n_points)
-        label += "/".join(map(str, n_points))
+            label += f"{_name}: {_n_points}, "
+        label = label[:-2]
         label += ")"
 
         if name is not None and imagePixelPosition is not None:
@@ -174,10 +192,10 @@ class QtImageStackViewer(QWidget):
                     label += ", value=" + str(value)
         self.label.setText(label)
 
-    def wheelEvent(self, event):
+    def wheelEvent(self, a0):
         if self.n_frames > 1:
             i = self._scrollbar.value()
-            if event.angleDelta().y() < 0:
+            if a0.angleDelta().y() < 0:
                 if i < self.n_frames - 1:
                     self._scrollbar.setValue(i + 1)
                     self.updateFrames()
@@ -187,9 +205,9 @@ class QtImageStackViewer(QWidget):
                     self.updateFrames()
             return
 
-        QWidget.wheelEvent(self, event)
+        QWidget.wheelEvent(self, a0)
 
-    def leaveEvent(self, event):
+    def leaveEvent(self, a0):
         self.updateLabel()
 
     def validate_points(self):
@@ -216,27 +234,33 @@ class QtImageStackViewer(QWidget):
                 "Number of total selected points for each image is less than 8."
             )
 
-    def show_ok_cancel_dialog(self, msg):
+    def closeEvent(self, a0):
         msg_box = QMessageBox()
         msg_box.setIcon(QMessageBox.Icon.Question)
-        msg_box.setText(
-            f"There are errors in point selection.\n\n{msg}\n\nClick Ok to close without saving, or Cancel to go back and fix the errors."
-        )
-        msg_box.setStandardButtons(
-            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel
-        )
-        msg_box.setDefaultButton(QMessageBox.StandardButton.Cancel)
-
-        result = msg_box.exec()
-        return result == QMessageBox.StandardButton.Ok
-
-    def closeEvent(self, event):
         try:
             self.validate_points()
         except RuntimeError as e:
-            if self.show_ok_cancel_dialog(str(e)):
-                event.accept()
-            else:
-                event.ignore()
+            msg_box.setText(
+                f"There are errors in point selection.\n\n{e}\n\nClick Yes to save anyway, No to abandon all changes, or Cancel to go back and fix the errors,"
+            )
+            msg_box.setStandardButtons(
+                QMessageBox.StandardButton.Yes
+                | QMessageBox.StandardButton.No
+                | QMessageBox.StandardButton.Cancel
+            )
+            msg_box.setDefaultButton(QMessageBox.StandardButton.Cancel)
         else:
-            event.accept()
+            msg_box.setText(
+                "Point selection has passed validation. Click Yes to save, or No to abandon all changes."
+            )
+            msg_box.setStandardButtons(
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            msg_box.setDefaultButton(QMessageBox.StandardButton.Yes)
+
+        result = msg_box.exec()
+        if result != QMessageBox.StandardButton.Cancel:
+            self.closed.emit(result == QMessageBox.StandardButton.Yes)
+            a0.accept()
+        else:
+            a0.ignore()
