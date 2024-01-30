@@ -1,4 +1,6 @@
 import scipy.io as sio
+from skimage import transform
+
 from wbi.file import File
 
 
@@ -14,6 +16,8 @@ class Alignment(File):
     def _load_mat_file(self):
         alignments_data = sio.loadmat(self.path)["alignments"]
 
+        # Store a key, value pair of each image and its transformation matrix
+        t_concord = {}
         # Create a two-level dictionary of key: value mappings
         data = {}
         for k in alignments_data.dtype.names:
@@ -24,6 +28,10 @@ class Alignment(File):
             else:
                 for k2 in inner_names:
                     data[k][k2] = alignments_data[k][0, 0][k2][0, 0]
+                t_concord[k] = self.transformation_matrix(
+                    alignments_data[k][0, 0]["Aall"][0, 0],
+                    alignments_data[k][0, 0]["Sall"][0, 0],
+                )
 
         # Does this data have "new-style" points?
         # where labelled points are specific to each frame
@@ -32,3 +40,10 @@ class Alignment(File):
         )
 
         self.data = data
+        self.t_concord = t_concord
+
+    def transformation_matrix(self, src, dst):
+        tform = transform.ProjectiveTransform()
+        tform.estimate(src, dst)
+
+        return tform.params.T
