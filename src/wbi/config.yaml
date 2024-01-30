@@ -11,7 +11,7 @@
   log_every: 1
 
  alignment:
-  #Location where the background file is located in
+  # Location of the background mat file
   background_file:
 
  # A key purely for testing purposes
