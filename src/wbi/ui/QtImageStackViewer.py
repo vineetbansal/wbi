@@ -10,8 +10,8 @@ point annotation and multiple images.
 
 from collections import defaultdict
 import numpy as np
-from PyQt6.QtCore import Qt, QSize
-from PyQt6.QtWidgets import (
+from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtWidgets import (
     QWidget,
     QHBoxLayout,
     QVBoxLayout,

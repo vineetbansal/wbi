@@ -1,7 +1,7 @@
 import numpy as np
-from PyQt6.QtCore import Qt, QRectF, QPoint, QPointF, pyqtSignal, QEvent, QSize
-from PyQt6.QtGui import QImage, QPixmap, QPainterPath, QMouseEvent, QPen, QFont
-from PyQt6.QtWidgets import (
+from PyQt5.QtCore import Qt, QRectF, QPoint, QPointF, pyqtSignal, QEvent, QSize
+from PyQt5.QtGui import QImage, QPixmap, QPainterPath, QMouseEvent, QPen, QFont
+from PyQt5.QtWidgets import (
     QGraphicsView,
     QGraphicsScene,
     QSizePolicy,

@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os.path as path
 import scipy.io as sio
-from PyQt6.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication
 from wbi.ui.QtImageStackViewer import QtImageStackViewer
 
 
