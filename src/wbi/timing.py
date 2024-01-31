@@ -103,6 +103,7 @@ class LowMagTiming(File):
     PATH = "CamData.txt"
 
     def __init__(self, *args, **kwargs):
+        self.has_stage_data = False
         self._load_timing_file()
 
     def __len__(self):
@@ -110,18 +111,44 @@ class LowMagTiming(File):
 
     def _load_timing_file(self):
         timing = pd.read_csv(self.path, sep="\t")
-        assert list(timing.columns) == [
-            "Total Frames",
-            "Time",
-        ], "Unexpected columns in timing file"
+        if len(timing.columns) == 2:
+            assert list(timing.columns) == [
+                "Total Frames",
+                "Time",
+            ], "Unexpected columns in timing file"
 
-        # Simplify column names
-        timing.columns = ["frame", "time"]
+            # Simplify column names
+            timing.columns = ["frame", "time"]
+        else:
+            # Recently added stage position x/y columns
+            assert len(timing.columns) == 4
+            assert list(timing.columns)[:2] == [
+                "Total Frames",
+                "Time",
+            ], "Unexpected columns in timing file"
+            self.has_stage_data = True
+            timing.columns = ["frame", "time", "stage_x", "stage_y"]
 
         # 0..n-1 => 1..n
         timing["frame"] = timing["frame"] + 1
 
         self.timing = timing
+
+    def fix_repeats(self):
+        """
+        add fix to deal with occasional repeat times, unique times are required
+        for alignments, this will tend to make then unique
+
+        From AviFlashAlign_v2.m
+        TODO: The logic here doesn't make sense! Later time values are
+        distorted more than the earlier ones.
+        """
+        time = self.timing["time"]
+        time = time + np.mean(np.diff(time)) * 0.001 * np.arange(1, len(time) + 1)
+        self.timing["time"] = time
+
+    def time_deltas(self):
+        return (self.timing["time"] - self.timing["time"].iloc[0]).to_numpy()
 
 
 class FrameSynchronous(File):
