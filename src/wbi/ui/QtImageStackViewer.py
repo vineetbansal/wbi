@@ -21,6 +21,7 @@ from PyQt5.QtWidgets import (
     QLabel,
     QToolBar,
 )
+from PyQt5.QtGui import QIcon
 from wbi.ui.QtImageViewer import QtImageViewer
 
 
@@ -237,30 +238,39 @@ class QtImageStackViewer(QWidget):
     def closeEvent(self, a0):
         msg_box = QMessageBox()
         msg_box.setIcon(QMessageBox.Icon.Question)
+        has_error = False
         try:
             self.validate_points()
         except RuntimeError as e:
+            has_error = True
             msg_box.setText(
-                f"There are errors in point selection.\n\n{e}\n\nClick Yes to save anyway, No to abandon all changes, or Cancel to go back and fix the errors,"
+                f'There are errors in point selection.\n\n{e}\n\nClick "Discard" to discard all changes, or "Fix" to go back and fix the errors,'
+            )
+            msg_box.setStandardButtons(
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            msg_box.button(QMessageBox.StandardButton.Yes).setText("Fix")
+            msg_box.button(QMessageBox.StandardButton.No).setText("Discard")
+            msg_box.setDefaultButton(QMessageBox.StandardButton.Yes)
+        else:
+            msg_box.setText(
+                'Point selection has passed validation. Click "Save" to save, "Discard" to discard all changes, or "Cancel" to back to the editing window.'
             )
             msg_box.setStandardButtons(
                 QMessageBox.StandardButton.Yes
                 | QMessageBox.StandardButton.No
                 | QMessageBox.StandardButton.Cancel
             )
-            msg_box.setDefaultButton(QMessageBox.StandardButton.Cancel)
-        else:
-            msg_box.setText(
-                "Point selection has passed validation. Click Yes to save, or No to abandon all changes."
-            )
-            msg_box.setStandardButtons(
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-            )
+            msg_box.button(QMessageBox.StandardButton.Yes).setText("Save")
+            msg_box.button(QMessageBox.StandardButton.No).setText("Discard")
+            msg_box.button(QMessageBox.StandardButton.Cancel).setIcon(QIcon())
             msg_box.setDefaultButton(QMessageBox.StandardButton.Yes)
 
         result = msg_box.exec()
-        if result != QMessageBox.StandardButton.Cancel:
+        if result == QMessageBox.StandardButton.Cancel:
+            a0.ignore()
+        elif has_error and result == QMessageBox.StandardButton.Yes:
+            a0.ignore()
+        else:
             self.closed.emit(result == QMessageBox.StandardButton.Yes)
             a0.accept()
-        else:
-            a0.ignore()
