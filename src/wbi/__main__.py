@@ -37,7 +37,7 @@ def main():
     unknown_dict = {}
     if unknown_args:
         for i in range(0, len(unknown_args), 2):
-            key = unknown_args[i].lstrip("--")
+            key = unknown_args[i].lstrip("-")
             value = unknown_args[i + 1] if i + 1 < len(unknown_args) else ""
             unknown_dict[key] = value
 
