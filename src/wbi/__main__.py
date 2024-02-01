@@ -32,12 +32,19 @@ def main():
         )
         this_parser.set_defaults(func=module.main)
 
-    args = parser.parse_args()
+    args, unknown_args = parser.parse_known_args()
+
+    unknown_dict = {}
+    if unknown_args:
+        for i in range(0, len(unknown_args), 2):
+            key = unknown_args[i].lstrip("--")
+            value = unknown_args[i + 1] if i + 1 < len(unknown_args) else ""
+            unknown_dict[key] = value
 
     if args.verbose:
         logger.setLevel(logging.DEBUG)
 
-    args.func(args)
+    args.func(args, **unknown_dict)
 
 
 if __name__ == "__main__":

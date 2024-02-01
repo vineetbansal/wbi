@@ -9,4 +9,4 @@
 
 module load anaconda3/2023.9
 conda activate 	/projects/LEIFER/communalCode/wbi/envs/wbi
-wbi flash_finder --input_folder /scratch/gpfs/aa9078/20231024_WBI_test/BrainScanner_20231024_153302/ --output_folder /scratch/gpfs/aa9078/20231024_WBI_test/BrainScanner_20231024_153302/generated_files --chunksize 4000
+wbi flash_finder --input_folder {{input_folder}} --output_folder {{output_folder}} --chunksize {{ chunksize or 4000 }}
