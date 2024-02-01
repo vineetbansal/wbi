@@ -1,0 +1,12 @@
+#!/bin/bash
+#SBATCH --job-name=wbi-{{ template_name }}
+#SBATCH --time={{ timelimit or '00:20:00' }}
+
+#SBATCH --nodes=1
+#SBATCH --tasks-per-node=1
+#SBATCH --cpus-per-task=1
+#SBATCH --mem-per-cpu=16M
+
+module load anaconda3/2023.9
+conda activate /projects/LEIFER/communalCode/wbi/envs/wbi
+wbi flash_finder --input_folder {{input_folder}} --output_folder {{output_folder}} --chunksize {{ chunksize or 4000 }}

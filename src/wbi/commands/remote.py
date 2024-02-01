@@ -4,16 +4,16 @@ from wbi.remote.remote import submit
 
 def add_args(parser):
     parser.add_argument(
+        "template",
+        nargs="?",
+        default="hello",
+        help="Template to use for job script (default: %(default)s)",
+    )
+    parser.add_argument(
         "--hostname", type=str, required=True, help="Hostname of remote machine"
     )
     parser.add_argument(
         "--username", type=str, required=True, help="Username on remote machine"
-    )
-    parser.add_argument(
-        "--template",
-        type=str,
-        default="hello",
-        help="Template to use for job script (default: %(default)s)",
     )
     parser.add_argument(
         "--cluster",
@@ -49,7 +49,7 @@ def add_args(parser):
     return parser
 
 
-def main(args):
+def main(args, **kwargs):
     submit(
         template_name=args.template,
         timelimit=args.timelimit,
@@ -59,6 +59,7 @@ def main(args):
         interactive=args.interactive,
         show_stdout=not args.no_stdout,
         show_stderr=args.stderr,
+        **kwargs,
     )
 
 
