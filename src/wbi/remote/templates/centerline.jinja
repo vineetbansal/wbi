@@ -1,0 +1,7 @@
+{% extends "base_template.jinja" %}
+
+{% block command %}
+{{ super() }}
+wbi centerline --input_folder {{input_folder}} {% if max_frames %} --max-frames {{ max_frames }}{% endif -%}
+{% if plot %} --plot{% endif -%}
+{% endblock %}

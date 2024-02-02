@@ -35,11 +35,18 @@ def main():
     args, unknown_args = parser.parse_known_args()
 
     unknown_dict = {}
-    if unknown_args:
-        for i in range(0, len(unknown_args), 2):
-            key = unknown_args[i].lstrip("-")
-            value = unknown_args[i + 1] if i + 1 < len(unknown_args) else ""
-            unknown_dict[key] = value
+    i = 0
+    while i < len(unknown_args):
+        key = unknown_args[i].lstrip("-")
+        i += 1  # Move to the next item assuming it's a value
+        value = ""
+        if i < len(unknown_args) and not unknown_args[i].startswith("-"):
+            value = unknown_args[i]
+            i += 1  # Move past the value for the next iteration
+        else:
+            # If the current key is a boolean flag, the next key will not be its valid value
+            value = key
+        unknown_dict[key] = value
 
     if args.verbose:
         logger.setLevel(logging.DEBUG)
