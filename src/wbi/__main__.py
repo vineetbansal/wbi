@@ -39,13 +39,12 @@ def main():
     while i < len(unknown_args):
         key = unknown_args[i].lstrip("-")
         i += 1  # Move to the next item assuming it's a value
-        value = ""
         if i < len(unknown_args) and not unknown_args[i].startswith("-"):
             value = unknown_args[i]
             i += 1  # Move past the value for the next iteration
         else:
-            # If the current key is a boolean flag, the next key will not be its valid value
-            value = key
+            # If the current key is a boolean flag set its value to True
+            value = True
         unknown_dict[key] = value
 
     if args.verbose:
