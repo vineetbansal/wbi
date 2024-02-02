@@ -78,9 +78,11 @@ def submit(
         logger.info(f"Submitted job with ID {job_id}")
     else:
         if show_stdout:
-            stdout = "\n".join(stdout.readlines()).strip()
-            logger.info(f"Remote stdout\n{stdout}")
-        if show_stderr:
+            stdout_str = "\n".join(stdout.readlines()).strip()
+            logger.info(f"Remote stdout\n{stdout_str}")
+
+        return_code = stdout.channel.recv_exit_status()
+        if return_code != 0 or show_stderr:
             stderr = "\n".join(stderr.readlines()).strip()
             logger.info(f"Remote stderr\n{stderr}")
 
