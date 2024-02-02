@@ -1,0 +1,7 @@
+{% extends "wbi_command.jinja" %}
+
+{% block command %}
+{{ super() }}
+wbi align --input_folder {{input_folder}} --output_folder {{ output_folder }}
+{%- if background_file %} --background_file {{ background_file }}{% endif %}
+{% endblock %}
