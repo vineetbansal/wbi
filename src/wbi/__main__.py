@@ -45,7 +45,7 @@ def main():
             i += 1  # Move past the value for the next iteration
         else:
             # If the current key is a boolean flag, the next key will not be its valid value
-            value = "--" + key
+            value = key
         unknown_dict[key] = value
 
     if args.verbose:
